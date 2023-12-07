@@ -1,0 +1,42 @@
+{% extends "base.html" %} {% block main %}
+<style>
+  fieldset > ul {
+    list-style: none;
+    padding-left: 1rem;
+  }
+</style>
+<form action="/translate" method="post" enctype="multipart/form-data">
+  <p>{{ locale.FORM_TITLE }}</p>
+  <input type="file" id="myFile" name="file" />
+  <fieldset>
+    <legend>{{ locale.FORM_SELECT_ENGINE }}</legend>
+    <ul>
+      <li>
+        <label for="model_libre">
+          <input type="radio" id="model_libre" name="engine" value="libre" />
+          Libretranslate
+        </label>
+      </li>
+      <li>
+        <label for="model-gpt">
+          <input type="radio" id="model-gpt" name="engine" value="gpt" />
+          GPT 3.5
+        </label>
+      </li>
+      <li>
+        <label for="model_deepl">
+          <input type="radio" id="model_deepl" name="engine" value="deepl" />
+          Deepl
+        </label>
+      </li>
+<!--      <li>-->
+<!--        <label for="model_google">-->
+<!--          <input type="radio" id="model_google" name="engine" value="google" />-->
+<!--          Google-->
+<!--        </label>-->
+<!--      </li>-->
+    </ul>
+  </fieldset>
+  <button type="submit">{{ locale.FORM_SUBMIT }}</button>
+</form>
+{% endblock %}

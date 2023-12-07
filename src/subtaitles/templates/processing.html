@@ -1,0 +1,73 @@
+{% extends "base.html" %} {% block main %}
+<style>
+  @keyframes spin {
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  .spinner {
+    --size: 1rem;
+    display: block;
+    height: var(--size);
+    aspect-ratio: 1;
+    border: 5px solid;
+    border-radius: 50%;
+    border-left: 5px solid transparent;
+    animation: spin 1s linear infinite;
+  }
+
+  .dot {
+    opacity: 1;
+    transition: opacity 0.4s ease-in-out;
+  }
+
+  .hidden {
+    opacity: 0;
+  }
+</style>
+
+<a href="/">↵ {{ new_upload }}</a>
+{% if processing %}
+<script>
+  let dot = -1;
+  let directionUp = true;
+  setInterval(() => {
+    const dots = [dot1, dot2, dot3];
+    if (dot === -1) {
+      directionUp = true;
+    }
+    if (dot === 3) {
+      directionUp = false;
+    }
+
+    if (directionUp) {
+      dot += 1;
+    } else {
+      dot -= 1;
+    }
+    if (dot >= 0 && dot <= 2) {
+      dots[dot].classList.toggle("hidden");
+    }
+  }, 200);
+
+  setInterval(async () => {
+    const res = await fetch(`${location.href}/status`);
+    const data = await res.json();
+    if (data.status === "done" || data.status === "error") {
+      location.reload();
+    }
+  }, 1000);
+</script>
+<h2 class="row">
+  Translating
+  <span id="dot1" class="dot hidden">.</span>
+  <span id="dot2" class="dot hidden">.</span>
+  <span id="dot3" class="dot hidden">.</span>
+</h2>
+<p style="display: flex; flex-direction: row">{{ item.path.rsplit("/", 1)[-1] }}</p>
+{% else %}
+<h4>Successfuly translated!</h4>
+<a href="/processes/{{ item.id }}/download" download="{{ item.path.parts[-1] }}">⤵ Download</a>
+
+{% endif %} {% endblock %}
