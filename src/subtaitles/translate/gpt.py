@@ -40,7 +40,7 @@ def completion(lang_from: Lang, lang_to: Lang, items: list[str]):
                 "role": "user",
                 "content": "Translate the following:"
                            "\n"
-                           f"{'\n\n'.join(items)}"
+                           + "\n\n".join(items)
             }
         ]
     }
@@ -91,12 +91,12 @@ async def translate(items: list[str], lang_from: Lang, lang_to: Lang) -> list[st
                                "- Check the accuracy and naturalness of the translations"
                                "before submitting them to the user.",
                 },
-                {
-                    "role": "user",
-                    "content": "Translate the following:"
-                               "\n"
-                               f"{'\n\n'.join(items)}"
-                }
+                # {
+                #     "role": "user",
+                #     "content": "Translate the following:"
+                #                "\n"
+                #                f"{'\n\n'.join(items)}"
+                # }
             ]
         )
 

@@ -1,0 +1,66 @@
+<style lang="css">
+nav {
+    background-color: var(--nav);
+    /* box-shadow: 0px 2px 5px var(--shadow); */
+    color: var(--text-light);
+    display: flex;
+    flex-direction: column;
+    align-items: end;
+    padding: 0.5rem 1rem;
+    margin-bottom: 1rem;
+}
+
+nav > div {
+    width: 100%;
+    padding-left: 1rem;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+nav > div > h2 {
+    margin: 0;
+}
+
+nav > div > h2 > span {
+    color: var(--secondary);
+    font-style: italic;
+    /* margin-right: 3px; */
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+}
+
+#srt {
+    position: absolute;
+    top: 0;
+    right: 0;
+    line-height: 0.9rem;
+    font-weight: 800;
+    filter: opacity(0.2);
+    font-size: 0.7rem;
+    font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+
+}
+
+</style>
+
+<nav>
+    <div>
+        <h2 class="logo">Subt <span>AI</span> tles</h2>
+        <a>login</a>
+    </div>
+</nav>
+
+<!-- <script>
+    document.getElementById("themeswitcher").addEventListener("click", () => {
+        const theme = document.documentElement.getAttribute("data-theme")
+        if (theme === "dark") {
+            localStorage.setItem("theme", "light");
+            document.documentElement.setAttribute("data-theme", "light");
+        } else {
+            localStorage.setItem("theme", "dark");
+            document.documentElement.setAttribute("data-theme", "dark");
+        }
+    })
+</script> -->

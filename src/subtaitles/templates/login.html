@@ -1,0 +1,13 @@
+{% extends "base.html" %} {% block main %}
+<style>
+  fieldset > ul {
+    list-style: none;
+    padding-left: 1rem;
+  }
+</style>
+<form action="/translate" method="post" enctype="multipart/form-data">
+    <h1>LOGIN</h1>
+  <p>{{ locale.LOGIN }}</p>
+  <button type="submit">{{ locale.FORM_SUBMIT }}</button>
+</form>
+{% endblock %}

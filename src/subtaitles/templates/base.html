@@ -2,7 +2,24 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Subt-AI-tles</title>
+    
+
+    <script>
+      const theme = localStorage.getItem("theme");
+      if (theme === "dark") {
+        document.documentElement.setAttribute("data-theme", "dark")
+      } else if (theme === "light") {
+        document.documentElement.setAttribute("data-theme", "light")
+      } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        localStorage.setItem("theme", "dark")
+        document.documentElement.setAttribute("data-theme", "dark")
+      } else {
+        localStorage.setItem("theme", "light")
+        document.documentElement.setAttribute("data-theme", "light")
+      }
+    </script>
   </head>
   <style lang="css">
     html {
@@ -10,43 +27,100 @@
     }
 
     :root {
+      --text-light: white;
       --border: #aaa;
+      --primary: #272a57;
+      --secondary: #59a3ff;
+      
+      --nav: var(--primary);
+      --footer: var(--secondary);
+      
+      --background: #ebecf3;
+      --foreground: white;
+      --text: #20232B;
+      --text-inv: var(--background);
+      --shadow: #6e628b;
+
+      --btn: var(--primary);
+      --btn-text: var(--primary);
+      --btn-text-inv: white;
     }
 
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --border: #333;
-        --primary: #209cee;
-      }
+
+    :root[data-theme=dark] {
+      --border: #333;
+      --background: #14142b;
+      --foreground: #24263a;
+      --shadow: rgba(19, 18, 18, 0.548);
+      --text: #EFF0ED;
+      
+      --footer: black;
+
+      --btn: white;
+      --btn-text: white;
+      --btn-text-inv: var(--primary);
     }
 
     body {
+      position: absolute;
+      inset: 0;
       font-family: system-ui;
+      color: var(--text);
       font-size: 1.125rem;
       line-height: 1.6;
+      margin: 0;
+      background-color: var(--background);
+      transition: all 0.2s ease-in-out;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
     }
 
     main {
-      width: min(100% - 4rem, 65ch);
+      width: min(97%, 65ch);
       margin-inline: auto;
+      min-height: 60dvh;
+    }
+
+    button {
+      border: 1px solid var(--btn);
+      border-radius: 0.33rem;
+      background-color: transparent;
+      color: var(--btn-text);
+      cursor: pointer;
+      transition: background-color 0.2s ease-in-out;
+      font-weight: 600;
+
+      & > svg > path {
+        stroke: var(--btn);
+      }
+
+      &:hover {
+        background-color: var(--btn);
+        color: var(--btn-text-inv);
+
+        svg > path {
+          stroke: var(--btn-text-inv);
+        }
+
+      }
     }
 
     a {
       color: inherit;
+      text-decoration: underline;
+      cursor: pointer;
+
+      &:hover {
+        filter: brightness(0.8);
+      }
     }
 
-    form {
-      border: 1px solid;
-      border-color: var(--border);
+    .card {
+      background-color: var(--foreground);
       border-radius: 0.333rem;
-      padding: 2rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    form > button {
-      height: 3rem;
+      padding: 1rem;
+      transition: background-color 0.2s ease-in-out;
     }
 
     h1 {
@@ -60,23 +134,14 @@
       gap: 1rem;
       align-items: center;
     }
-
-    .error {
-      padding: 1rem;
-      text-align: center;
-      background-color: #e6979b85;
-      background-color: #eeeeeec4;
-      /* color: #e5687a; */
-      border-left: 0.5rem solid;
-      border-color: #9f4045;
-      color: #9f4045;
-    }
   </style>
   <body>
-    <main>
-      <h1>{{ locale.TITLE }}</h1>
-      <p>{{ locale.DESCRIPTION }}</p>
-      {% block main %}{% endblock %}
-    </main>
+    <div>
+      {% include "components/navbar.html" %}
+      <main>
+        {% block main %}{% endblock %}
+      </main>
+    </div>
+    {% include "components/footer.html" %}
   </body>
 </html>
