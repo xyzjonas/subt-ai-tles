@@ -1,0 +1,73 @@
+from __future__ import annotations
+
+from copy import deepcopy
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+import pysrt
+from pysrt import SubRipFile
+
+from subtaitles.providers import Engine, get_translator
+
+from .srt import strip_srt_markup
+
+if TYPE_CHECKING:
+    from subtaitles.language import Lang
+
+
+async def translate_srt(
+    srt: SubRipFile,
+    source: Lang,
+    target: Lang,
+    engine: Engine,
+) -> SubRipFile:
+    """Translate subtitle file (.srt) a parsed SubRipFile object.
+
+    :param srt: parsed srt file
+    :param source: source language
+    :param target: target language
+    :param engine: translation engine
+    :return: translated subtitle file as SubRipFile object
+    """
+    translator = get_translator(engine)
+    translations = await translator.translate(
+        strip_srt_markup([item.text for item in srt]),
+        source,
+        target,
+    )
+
+    result = SubRipFile(items=[])
+    for item, translation in zip(srt, translations, strict=False):
+        new_item = deepcopy(item)
+        new_item.text = translation
+        result.append(new_item)
+
+    return result
+
+
+async def translate_srt_file(
+    path: Path | str,
+    source: Lang,
+    target: Lang,
+    engine: Engine,
+    new_path: Path | None = None,
+) -> Path:
+    """Translate subtitle file (.srt) given a path on the local filesystem.
+
+    :param path: filesystem path to the srt source file
+    :param source: source language
+    :param target: target language
+    :param engine: translation engine
+    :param new_path: arbitrary path to the new file with translated subtitles
+    :return: path to the new file with translated subtitles
+    """
+    path = Path(path)
+    filename, ext = path.name.rsplit(".", 1)
+    new_path = new_path or path.parent / f"{filename}-{target}.{ext}"
+    srt = pysrt.open(path.absolute())
+
+    result = await translate_srt(srt, source, target, engine)
+    with new_path.open("w") as file:
+        result.write_into(file)
+
+    return new_path

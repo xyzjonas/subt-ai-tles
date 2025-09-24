@@ -1,60 +1,56 @@
 import asyncio
-import sys
-from copy import deepcopy
+from argparse import ArgumentParser
 from pathlib import Path
 
-import pysrt
-import typer
-import uvicorn
-from dotenv import load_dotenv
-from rich import print
-from rich.console import Console
-
-from subtaitles.app import app
-from subtaitles.core import translate_srt
-from subtaitles.translate import LANG, Engine
-
-load_dotenv()
-
-console = Console()
-
-cli_app = typer.Typer()
+from subtaitles import Engine, Lang
+from subtaitles.translate import translate_srt_file
 
 
-def strip_srt(path: str):
-    srt = pysrt.open(path)
-    items = [it for it in srt]
-    result = [it.text for it in items]
-    yield result
+def main() -> None:
+    parser = ArgumentParser()
+    parser.add_argument(
+        "input",
+        metavar="INPUT_PATH",
+        type=Path,
+        help="Path to a .srt file to be translated",
+    )
+    parser.add_argument(
+        "output",
+        metavar="OUTPUT_PATH",
+        type=Path,
+        help="Path to where the resulting file will be stored",
+    )
+    parser.add_argument(
+        "lang_from",
+        metavar="LANGUAGE_FROM",
+        type=Lang,
+        help="Language to be translated from",
+    )
+    parser.add_argument(
+        "lang_to", metavar="LANGUAGE_TO", type=Lang, help="Language to be translated to"
+    )
+    parser.add_argument(
+        "--engine",
+        type=Engine,
+        help="Translation engine to be used",
+        default=Engine.GPT,
+    )
 
-    for index, item in items:
-        new_item = deepcopy(item)
-        new_item.text = result[index]
-        result[index] = new_item
+    args = parser.parse_args()
 
-
-@cli_app.command(name="translate")
-def main_wrapper(
-        source: LANG,
-        target: LANG,
-        path: Path,
-        engine: Engine = Engine.LIBRE,
-):
-    if not path.is_file():
-        print(f"[bold red]{str(path.absolute())!r} does not exist or is not a file!")
-        sys.exit(1)
-    asyncio.run(translate_srt(path, engine, source, target))
-
-
-@cli_app.command()
-def serve(host: str = "0.0.0.0", port: int = 8000):
-    uvicorn.run(app, host=host, port=port)
-
-
-def start_app():
-    cli_app()
+    try:
+        asyncio.run(
+            translate_srt_file(
+                path=args.input,
+                source=args.lang_from,
+                target=args.lang_to,
+                engine=args.engine,
+                new_path=args.output,
+            )
+        )
+    except Exception as exc:  # noqa: BLE001
+        print(f"\033[31mFailed to translate subtitles: {exc}\033[0m")  # noqa: T201
 
 
 if __name__ == "__main__":
-    # uvicorn.run(app)
-    start_app()
+    main()

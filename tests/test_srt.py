@@ -1,11 +1,12 @@
-import pysrt
+from pathlib import Path
+
 import srt
 
-from subtaitles.translate import strip_srt_markup
+from subtaitles.srt import strip_srt_markup
 
 
-def test_parse_srt(data):
-    with open(data / "Middlemarch S01E01.srt") as file:
+def test_parse_srt(data: Path) -> None:
+    with (data / "Middlemarch S01E01.srt").open("r") as file:
         content = file.read()
 
     file = list(srt.parse(content))

@@ -1,7 +1,7 @@
 # subt-ai-tles
 A simple API/webpage wrapper for subtitles translation using various existing language models.
 
-##### Setup .env file
+##### Con
 ```dotenv
 # VARS needed for OpenAI models
 OPENAI_API_KEY=<your-key-here>
