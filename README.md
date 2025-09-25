@@ -1,8 +1,8 @@
-# subt-ai-tles
-A simple API/webpage wrapper for subtitles translation using various existing language models.
+# SUBT-AI-TLES
+A simple wrapper around LLMs that provides language translation interface for subtitles (.srt). 
 
 ## Predefined implementations
-> OpenAI API is the only supported/pre-implemented 'backend'
+> So far OpenAI API is the only supported/pre-implemented 'backend'
 
 Setup required environment variables and then simply import and invoke the function. 
 ```python

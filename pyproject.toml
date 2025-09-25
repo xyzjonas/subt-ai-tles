@@ -20,15 +20,17 @@ dependencies = [
     "srt<4.0.0,>=3.5.3",
     "pydantic-settings>=2.10.1",
     "pydantic-ai-slim[openai]>=1.0.10",
-    "pytest-asyncio==0.23.7",
 ]
+
+[project.urls]
+Homepage = "https://github.com/xyzjonas/subt-ai-tles"
+
+[project.scripts]
+translate_subtitles = "subtaitles.cli:main"
 
 [build-system]
 requires = ["uv_build>=0.8.17,<0.9.0"]
 build-backend = "uv_build"
-
-[project.scripts]
-translate_subtitles = "subtaitles.cli:main"
 
 [tool.uv.build-backend]
 module-name = "subtaitles"
