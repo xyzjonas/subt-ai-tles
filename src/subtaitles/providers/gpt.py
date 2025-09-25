@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 DELIMITER = "---"
 
 
-class GptTranslator:
+class OpenAiTranslator:
     context = """Translate subtitles from {lang_from} to {lang_to} accurately while
 maintaining the original meaning and tone. Use natural-sounding phrases and idioms
 that accurately convey the meaning of the original text.

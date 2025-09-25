@@ -1,4 +1,5 @@
 import asyncio
+import sys
 from argparse import ArgumentParser
 from pathlib import Path
 
@@ -33,7 +34,7 @@ def main() -> None:
         "--engine",
         type=Engine,
         help="Translation engine to be used",
-        default=Engine.GPT,
+        default=Engine.OPEN_AI,
     )
 
     args = parser.parse_args()
@@ -44,12 +45,13 @@ def main() -> None:
                 path=args.input,
                 source=args.lang_from,
                 target=args.lang_to,
-                engine=args.engine,
+                translator=args.engine,
                 new_path=args.output,
             )
         )
     except Exception as exc:  # noqa: BLE001
         print(f"\033[31mFailed to translate subtitles: {exc}\033[0m")  # noqa: T201
+        sys.exit(1)
 
 
 if __name__ == "__main__":

@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from pydantic_ai import Agent
 
-from subtaitles import Lang
 from subtaitles.environment import env
+
+if TYPE_CHECKING:
+    from subtaitles import Lang
 
 
 class PydanticAiTranslator:

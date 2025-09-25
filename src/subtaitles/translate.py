@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 import pysrt
 from pysrt import SubRipFile
 
-from subtaitles.providers import Engine, get_translator
+from subtaitles.providers import Engine, TranslateProtocol, get_translator
 
 from .srt import strip_srt_markup
 
@@ -19,17 +19,19 @@ async def translate_srt(
     srt: SubRipFile,
     source: Lang,
     target: Lang,
-    engine: Engine,
+    translator: Engine | TranslateProtocol,
 ) -> SubRipFile:
     """Translate subtitle file (.srt) a parsed SubRipFile object.
 
     :param srt: parsed srt file
     :param source: source language
     :param target: target language
-    :param engine: translation engine
+    :param translator: translation engine or translator instance
     :return: translated subtitle file as SubRipFile object
     """
-    translator = get_translator(engine)
+    if not hasattr(translator, "translate"):
+        translator = get_translator(translator)
+
     translations = await translator.translate(
         strip_srt_markup([item.text for item in srt]),
         source,
@@ -49,24 +51,24 @@ async def translate_srt_file(
     path: Path | str,
     source: Lang,
     target: Lang,
-    engine: Engine,
-    new_path: Path | None = None,
+    translator: Engine | TranslateProtocol,
+    new_path: Path | str | None = None,
 ) -> Path:
     """Translate subtitle file (.srt) given a path on the local filesystem.
 
     :param path: filesystem path to the srt source file
     :param source: source language
     :param target: target language
-    :param engine: translation engine
+    :param translator: translation engine type or translator instance
     :param new_path: arbitrary path to the new file with translated subtitles
     :return: path to the new file with translated subtitles
     """
     path = Path(path)
     filename, ext = path.name.rsplit(".", 1)
-    new_path = new_path or path.parent / f"{filename}-{target}.{ext}"
+    new_path = Path(new_path) or path.parent / f"{filename}-{target}.{ext}"
     srt = pysrt.open(path.absolute())
 
-    result = await translate_srt(srt, source, target, engine)
+    result = await translate_srt(srt, source, target, translator)
     with new_path.open("w") as file:
         result.write_into(file)
 

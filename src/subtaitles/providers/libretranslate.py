@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from libretranslatepy import LibreTranslateAPI
 
 from subtaitles.environment import env
-from subtaitles.language import Lang
+
+if TYPE_CHECKING:
+    from subtaitles.language import Lang
 
 DELIMITER = "\n\n"
 

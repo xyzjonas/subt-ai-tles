@@ -19,7 +19,7 @@ async def test_translate_srt_file(data: Path) -> None:
             "subtaitles.translate.get_translator", return_value=MockedTranslator()
         ):
             output_path = await translate_srt_file(
-                input_path, Lang.EN, Lang.EN, Engine.LIBRE, output
+                input_path, Lang.EN, Lang.EN, Engine.OPEN_AI, output
             )
 
         assert output == output_path
