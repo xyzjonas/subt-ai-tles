@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 
 
@@ -6,10 +6,11 @@ from enum import Enum
 class Language:
     iso: str
     english: str
+    aliases: list[str] = field(default_factory=list)
 
 
 mapping = {
-    "cs": Language(iso="cs", english="czech"),
+    "cs": Language(iso="cs", english="czech", aliases=["cze", "cz"]),
     "en": Language(iso="en", english="english"),
     "de": Language(iso="de", english="german"),
     "es": Language(iso="es", english="spanish"),

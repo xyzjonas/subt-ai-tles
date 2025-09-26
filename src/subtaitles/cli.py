@@ -5,6 +5,7 @@ from argparse import ArgumentParser
 from pathlib import Path
 
 from subtaitles import Engine, Lang
+from subtaitles.filesystem import translate_directory
 from subtaitles.translate import translate_srt_file
 
 
@@ -23,6 +24,7 @@ def main() -> None:
         "output",
         metavar="OUTPUT_PATH",
         type=Path,
+        default=None,
         help="Path to where the resulting file will be stored",
     )
     parser.add_argument(
@@ -34,6 +36,7 @@ def main() -> None:
     parser.add_argument(
         "lang_to", metavar="LANGUAGE_TO", type=Lang, help="Language to be translated to"
     )
+    parser.add_argument("--dir", action="store_true")
     parser.add_argument(
         "--engine",
         type=Engine,
@@ -42,6 +45,9 @@ def main() -> None:
     )
 
     args = parser.parse_args()
+    if args.dir:
+        asyncio.run(translate_directory(args.input, args.lang_from, args.lang_to, args.engine))
+        sys.exit(0)
 
     try:
         asyncio.run(
