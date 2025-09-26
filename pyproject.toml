@@ -1,7 +1,7 @@
 [project]
 name = "subt-ai-tles"
 requires-python = ">=3.10"
-version = "0.0.1"
+version = "0.0.2"
 description = ""
 readme = "README.md"
 license = {text = "MIT"}
@@ -54,7 +54,7 @@ asyncio_mode = "auto" # or "strict"
 target-version = "py313"
 
 # Line length
-line-length = 88
+line-length = 95
 
 # Enable ALL available rule categories
 lint.select = [

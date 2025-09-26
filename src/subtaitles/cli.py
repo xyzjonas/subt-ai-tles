@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import sys
 from argparse import ArgumentParser
 from pathlib import Path
@@ -8,6 +9,9 @@ from subtaitles.translate import translate_srt_file
 
 
 def main() -> None:
+    logging.basicConfig()
+    logging.getLogger(__package__).setLevel(level=logging.INFO)
+
     parser = ArgumentParser()
     parser.add_argument(
         "input",

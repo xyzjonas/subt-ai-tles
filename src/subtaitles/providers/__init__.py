@@ -1,7 +1,7 @@
 from enum import Enum
 
 # from subtaitles.environment import env
-from .gpt import OpenAiTranslator
+from .openai import OpenAiTranslator
 
 # from .libretranslate import LibreTranslateTranslator
 from .protocol import TranslateProtocol
