@@ -87,7 +87,7 @@ async def run_translate_tasks(
         for task in tasks
     ]
 
-    return await asyncio.gather(*translate_tasks)
+    return await asyncio.gather(*translate_tasks, return_exceptions=True)
 
 
 async def translate_directory(
