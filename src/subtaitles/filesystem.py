@@ -4,9 +4,14 @@ import asyncio
 from dataclasses import dataclass
 from itertools import chain
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from . import Engine, Lang, TranslateProtocol
 from .translate import translate_srt_file
+
+if TYPE_CHECKING:
+    from . import Engine
+    from .language import Lang
+    from .providers import TranslateProtocol
 
 
 @dataclass

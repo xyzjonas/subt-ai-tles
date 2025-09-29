@@ -27,6 +27,28 @@ asyncio.run(
 from subtaitles import env
 ```
 
+
+## Directory mode
+A directory mode is included as well that tries to translate ALL the `.srt` files it can find in the supplied directory
+path. Locale extension are used to avoid re-running the translation over and over, e.g.:
+> If  `sub-1.de.srt` already exists in the directory and translation from `en -> de` is to be performed on it, 
+> the file `sub-1.srt` will be skipped altogether.
+ 
+```python
+import asyncio
+from subtaitles import Lang, Engine
+from subtaitles.filesystem import translate_directory
+
+asyncio.run(
+    translate_directory(
+        path="/tmp/data/shows/foo/season-01",
+        translator=Engine.OPEN_AI,
+        source=Lang.EN,
+        target=Lang.DE
+    )
+)
+```
+
 ## Custom implementations
 An arbitrary class that implements the `TranslateProtocol` can be passed to both 
 the `translate_srt_file()` and `translate_srt()`
