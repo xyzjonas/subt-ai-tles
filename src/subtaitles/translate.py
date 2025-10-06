@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from copy import deepcopy
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -13,6 +14,9 @@ from .srt import strip_srt_markup
 
 if TYPE_CHECKING:
     from subtaitles.language import Lang
+
+
+logger = logging.getLogger(__name__)
 
 
 async def translate_srt(
@@ -64,6 +68,7 @@ async def translate_srt_file(
     :return: path to the new file with translated subtitles
     """
     path = Path(path)
+    logger.info("Translating subtitle file %s", path)
     filename, ext = path.name.rsplit(".", 1)
     new_path = Path(new_path) or path.parent / f"{filename}-{target}.{ext}"
     srt = pysrt.open(path.absolute())
@@ -72,4 +77,5 @@ async def translate_srt_file(
     with new_path.open("w") as file:
         result.write_into(file)
 
+    logger.info("Translated subtitles written to %s", new_path)
     return new_path

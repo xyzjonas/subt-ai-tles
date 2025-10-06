@@ -20,6 +20,7 @@ dependencies = [
     "srt<4.0.0,>=3.5.3",
     "pydantic-settings>=2.10.1",
     "pydantic-ai-slim[openai]>=1.0.10",
+    "diskcache>=5.6.3",
 ]
 
 [project.urls]

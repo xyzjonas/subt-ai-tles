@@ -29,6 +29,7 @@ class EnvVars:
     OPENAI_ORG_ID = EnvVar("OPENAI_ORG_ID")
     OPENAI_MODEL = EnvVar("OPENAI_MODEL", "gpt-5-nano")
     LIBRETRANSLATE_API_URL = EnvVar("LIBRETRANSLATE_API_URL")
+    CACHE_DIR = EnvVar("SRT_CACHE_DIR")
 
 
 env = EnvVars()
