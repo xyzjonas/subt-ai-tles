@@ -59,8 +59,8 @@ def main() -> None:
                 new_path=args.output,
             )
         )
-    except Exception as exc:
-        print(f"\033[31mFailed to translate subtitles: {exc}\033[0m")
+    except Exception as exc:  # noqa: BLE001
+        print(f"\033[31mFailed to translate subtitles: {exc}\033[0m")  # noqa: T201
         sys.exit(1)
 
 
