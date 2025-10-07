@@ -178,6 +178,7 @@ lint.ignore = [
     "D105",  # Missing docstring in magic method
     "D106",  # Missing docstring in public nested class
     "D107",  # Missing docstring in __init__
+    "D203",  # conflict with the formatter
     "D211",
     "D213",
     "COM812", # Trailing comma missing (conflicts with formatter)

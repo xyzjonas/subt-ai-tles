@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from openai import AsyncOpenAI
 
-from subtaitles.cache import cache, get_cache_key
+from subtaitles.cache import CacheProtocol, disk_cache, get_cache_key
 from subtaitles.environment import env
 from subtaitles.imports import batched
 
@@ -30,12 +30,21 @@ in place to indicate item borders! Response can't start or end with a {delimiter
 Make sure that the number of lines separated by {delimiter} is equal.
 """
 
-    def __init__(self, model: str | None = None) -> None:
+    def __init__(
+        self,
+        model: str | None = None,
+        openapi_key: str | None = None,
+        openapi_org: str | None = None,
+        batch_size: int = 10,
+        cache: CacheProtocol = None,
+    ) -> None:
         self.model = model or env.OPENAI_MODEL(strict=True)
         self.client = AsyncOpenAI(
-            api_key=env.OPENAI_API_KEY(strict=True),
-            organization=env.OPENAI_ORG_ID(strict=True),
+            api_key=openapi_key or env.OPENAI_API_KEY(strict=True),
+            organization=openapi_org or env.OPENAI_ORG_ID(strict=True),
         )
+        self.batch_size = batch_size
+        self.cache = cache or disk_cache
 
     def get_completion(
         self,
@@ -66,9 +75,10 @@ Make sure that the number of lines separated by {delimiter} is equal.
         retries_left: int = 10,
         batch_id: int = 0,
     ) -> list[str]:
+        """Model has hard time keeping delimiters and not messing up overall."""
         cache_key = get_cache_key(text[0], language_from, language_to)
-        if cache.get(cache_key):
-            return cache[cache_key]
+        if self.cache.get(cache_key):
+            return self.cache[cache_key]
 
         if retries_left < MIN_RETRIES_TO_LOG:
             logger.debug("Processing batch %d retries-left=%d", batch_id, retries_left)
@@ -93,7 +103,7 @@ Make sure that the number of lines separated by {delimiter} is equal.
             raise ValueError(msg)
 
         logger.debug("[OK] batch %d completed, retries-left=%d", batch_id, retries_left)
-        cache[cache_key] = res
+        self.cache[cache_key] = res
         return res
 
     async def translate(
@@ -101,18 +111,17 @@ Make sure that the number of lines separated by {delimiter} is equal.
         text: list[str],
         language_from: Lang,
         language_to: Lang,
-        batch_size: int = 10,
     ) -> list[str]:
         text = [line.strip() for line in text]
         translated_lines = []
 
         tasks = []
-        for index, batch in enumerate(batched(text, batch_size, strict=False)):
+        for index, batch in enumerate(batched(text, self.batch_size, strict=False)):
             logger.debug(
                 "Running batch (%d/%d), size=%d items",
-                (index + 1) * batch_size,
+                (index + 1) * self.batch_size,
                 len(text),
-                batch_size,
+                self.batch_size,
             )
             tasks.append(
                 self.process_batch(list(batch), language_from, language_to, batch_id=index)
