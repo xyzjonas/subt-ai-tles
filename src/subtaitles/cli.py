@@ -5,6 +5,7 @@ from argparse import ArgumentParser
 from pathlib import Path
 
 from subtaitles import Engine, Lang
+from subtaitles.exceptions import FailedToTranslateError
 from subtaitles.filesystem import translate_directory
 from subtaitles.translate import translate_srt_file
 
@@ -46,7 +47,12 @@ def main() -> None:
 
     args = parser.parse_args()
     if args.dir:
-        asyncio.run(translate_directory(args.input, args.lang_from, args.lang_to, args.engine))
+        results = asyncio.run(
+            translate_directory(args.input, args.lang_from, args.lang_to, args.engine)
+        )
+        for result in results:
+            if isinstance(result, FailedToTranslateError):
+                print(f"\033[31mFailed to translate file {result.input_path}\033[0m")  # noqa: T201
         sys.exit(0)
 
     try:

@@ -10,6 +10,7 @@ from pysrt import SubRipFile
 
 from subtaitles.providers import Engine, TranslateProtocol, get_translator
 
+from .exceptions import FailedToTranslateError
 from .srt import strip_srt_markup
 
 if TYPE_CHECKING:
@@ -67,15 +68,21 @@ async def translate_srt_file(
     :param new_path: arbitrary path to the new file with translated subtitles
     :return: path to the new file with translated subtitles
     """
-    path = Path(path)
-    logger.info("Translating subtitle file %s", path)
-    filename, ext = path.name.rsplit(".", 1)
-    new_path = Path(new_path) or path.parent / f"{filename}-{target}.{ext}"
-    srt = pysrt.open(path.absolute())
+    try:
+        path = Path(path)
+        logger.info("Translating subtitle file %s", path)
+        filename, ext = path.name.rsplit(".", 1)
+        new_path = Path(new_path) or path.parent / f"{filename}-{target}.{ext}"
+        srt = pysrt.open(path.absolute())
 
-    result = await translate_srt(srt, source, target, translator)
-    with new_path.open("w") as file:
-        result.write_into(file)
+        result = await translate_srt(srt, source, target, translator)
+        with new_path.open("w") as file:
+            result.write_into(file)
 
-    logger.info("Translated subtitles written to %s", new_path)
-    return new_path
+        logger.info("Translated subtitles written to %s", new_path)
+    except ValueError as exc:
+        raise FailedToTranslateError(path, new_path, "Translator failed") from exc
+    except Exception as exc:
+        raise FailedToTranslateError(path, new_path, f"Unexpected error: {exc}") from exc
+    else:
+        return new_path

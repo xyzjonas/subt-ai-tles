@@ -2,7 +2,8 @@ from typing import Protocol, TypeVar
 
 from diskcache import Cache
 
-from subtaitles import Lang, env
+from .environment import env
+from .language import Lang
 
 disk_cache = Cache(env.CACHE_DIR.value)
 
