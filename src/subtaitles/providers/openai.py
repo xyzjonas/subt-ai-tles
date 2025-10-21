@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
     from subtaitles.language import Lang
+    from subtaitles.providers.protocol import Progress
 
 
 logger = logging.getLogger(__name__)
@@ -67,17 +68,20 @@ Make sure that the number of lines separated by {delimiter} is equal.
             ],
         }
 
-    async def process_batch(
+    async def process_batch(  # noqa: PLR0913
         self,
         text: list[str] | tuple[str],
         language_from: Lang,
         language_to: Lang,
         retries_left: int = 10,
         batch_id: int = 0,
+        progress: Progress | None = None,
     ) -> list[str]:
         """Model has hard time keeping delimiters and not messing up overall."""
         cache_key = get_cache_key(text[0], language_from, language_to)
         if self.cache.get(cache_key):
+            if progress:
+                progress.current += 1
             return self.cache[cache_key]
 
         if retries_left < MIN_RETRIES_TO_LOG:
@@ -103,6 +107,9 @@ Make sure that the number of lines separated by {delimiter} is equal.
             raise ValueError(msg)
 
         logger.debug("[OK] batch %d completed, retries-left=%d", batch_id, retries_left)
+        if progress:
+            progress.current += 1
+
         self.cache[cache_key] = res
         return res
 
@@ -111,22 +118,20 @@ Make sure that the number of lines separated by {delimiter} is equal.
         text: list[str],
         language_from: Lang,
         language_to: Lang,
+        progress: Progress | None = None,
     ) -> list[str]:
         text = [line.strip() for line in text]
         translated_lines = []
 
         tasks = []
         for index, batch in enumerate(batched(text, self.batch_size, strict=False)):
-            logger.debug(
-                "Running batch (%d/%d), size=%d items",
-                (index + 1) * self.batch_size,
-                len(text),
-                self.batch_size,
-            )
             tasks.append(
-                self.process_batch(list(batch), language_from, language_to, batch_id=index)
+                self.process_batch(
+                    list(batch), language_from, language_to, batch_id=index, progress=progress
+                )
             )
 
+        progress.total = len(tasks)
         for result in await asyncio.gather(*tasks):
             translated_lines.extend(result)
 

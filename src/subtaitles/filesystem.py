@@ -1,25 +1,15 @@
 from __future__ import annotations
 
-import asyncio
-from dataclasses import dataclass
 from itertools import chain
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from .translate import translate_srt_file
+from .task import TranslateTask, TranslateTaskData
 
 if TYPE_CHECKING:
     from . import Engine
     from .language import Lang
     from .providers import TranslateProtocol
-
-
-@dataclass
-class TranslateTask:
-    path: Path
-    source: Lang
-    target: Lang
-    new_path: Path
 
 
 def find_srt_files(path: str | Path) -> list[Path]:
@@ -59,9 +49,7 @@ def get_new_language_file_path(path: str | Path, lang_from: Lang, lang_to: Lang)
 
 
 def get_translate_tasks(
-    path: Path | str,
-    source: Lang,
-    target: Lang,
+    path: Path | str, source: Lang, target: Lang, translator: Engine | TranslateProtocol
 ) -> list[TranslateTask]:
     path_to_dir = Path(path)
     if not path_to_dir.is_dir():
@@ -69,7 +57,7 @@ def get_translate_tasks(
         raise FileNotFoundError(msg)
 
     tasks = [
-        TranslateTask(
+        TranslateTaskData(
             path=srt_file,
             source=source,
             target=target,
@@ -78,34 +66,36 @@ def get_translate_tasks(
         for srt_file in find_srt_files(path_to_dir)
         if not is_already_translated(srt_file, lang=target)
     ]
-    return [task for task in tasks if not task.new_path.is_file()]
+    return [TranslateTask(task, translator) for task in tasks if not task.new_path.is_file()]
 
 
-async def run_translate_tasks(
-    *tasks: TranslateTask, translator: Engine | TranslateProtocol
-) -> list[Path]:
-    translate_tasks = [
-        translate_srt_file(
-            **task.__dict__,
-            translator=translator,
-        )
-        for task in tasks
-    ]
+# async def run_translate_tasks(
+#     *tasks: TranslateTaskData, translator: Engine | TranslateProtocol
+# ) -> list[Path]:
+#     translate_tasks = [
+#         translate_srt_file(
+#             **task.__dict__,
+#             translator=translator,
+#         )
+#         for task in tasks
+#     ]
+#
+#     return await asyncio.gather(*translate_tasks, return_exceptions=True)
 
-    return await asyncio.gather(*translate_tasks, return_exceptions=True)
 
-
-async def translate_directory(
+def translate_directory(
     path: Path | str,
     source: Lang,
     target: Lang,
     translator: Engine | TranslateProtocol,
-) -> list[Path]:
+) -> list[TranslateTask]:
     path_to_dir = Path(path)
     if not path_to_dir.is_dir():
         msg = "Supplied path is NOT a directory"
         raise FileNotFoundError(msg)
 
-    return await run_translate_tasks(
-        *get_translate_tasks(path, source, target), translator=translator
-    )
+    tasks = get_translate_tasks(path, source, target, translator)
+    for task in tasks:
+        task.run()
+
+    return tasks

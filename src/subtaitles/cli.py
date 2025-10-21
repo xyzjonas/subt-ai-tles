@@ -1,19 +1,63 @@
 import asyncio
-import logging
 import sys
 from argparse import ArgumentParser
+from collections.abc import Iterable
 from pathlib import Path
 
 from subtaitles import Engine, Lang
-from subtaitles.exceptions import FailedToTranslateError
 from subtaitles.filesystem import translate_directory
-from subtaitles.translate import translate_srt_file
+from subtaitles.task import TranslateTask
+from subtaitles.translate import get_translate_task
+
+
+def tasks_done(tasks: Iterable[TranslateTask]) -> bool:
+    return all(task.is_done for task in tasks)
+
+
+def print_task(task: TranslateTask) -> None:
+    mark = "x" if task.exception else "✓" if task.is_done else " "
+    print(  # noqa: T201
+        f"[{mark}] {task.progress.current}/{task.progress.total} {task.task_data.path} "
+        f"-> {task.task_data.target.language.english}\033[K"
+    )
+
+
+def print_tasks(tasks: Iterable[TranslateTask]) -> None:
+    """Print the whole status list. completed is a set of indices marked done."""
+    for task in tasks:
+        print_task(task)
+
+
+async def translate_dir_cmd(
+    input_path: Path, lang_from: Lang, lang_to: Lang, engine: Engine
+) -> None:
+    tasks = translate_directory(input_path, lang_from, lang_to, engine)
+    while True:
+        print(f"\033[{len(tasks)}A", end="")  # noqa: T201
+        print_tasks(tasks)
+        await asyncio.sleep(0.1)
+
+        if tasks_done(tasks):
+            break
+
+    if not tasks:
+        print(f"Nothing to translate in {input_path}\033[K")  # noqa: T201
+
+
+async def translate_single_cmd(
+    input_path: Path, new_path: Path, lang_from: Lang, lang_to: Lang, engine: Engine
+) -> None:
+    task = get_translate_task(input_path, new_path, lang_from, lang_to, engine)
+    task.run()
+    while True:
+        print_task(task)
+        await asyncio.sleep(0.1)
+
+        if task.is_done:
+            break
 
 
 def main() -> None:
-    logging.basicConfig()
-    logging.getLogger(__package__).setLevel(level=logging.INFO)
-
     parser = ArgumentParser()
     parser.add_argument(
         "input",
@@ -44,30 +88,28 @@ def main() -> None:
         help="Translation engine to be used",
         default=Engine.OPEN_AI,
     )
+    parser.add_argument(
+        "--log-level",
+        "-l",
+        help="loglevel",
+        default="INFO",
+    )
 
     args = parser.parse_args()
+
     if args.dir:
-        results = asyncio.run(
-            translate_directory(args.input, args.lang_from, args.lang_to, args.engine)
-        )
-        for result in results:
-            if isinstance(result, FailedToTranslateError):
-                print(f"\033[31mFailed to translate file {result.input_path}\033[0m")  # noqa: T201
+        asyncio.run(translate_dir_cmd(args.input, args.lang_from, args.lang_to, args.engine))
         sys.exit(0)
 
-    try:
-        asyncio.run(
-            translate_srt_file(
-                path=args.input,
-                source=args.lang_from,
-                target=args.lang_to,
-                translator=args.engine,
-                new_path=args.output,
-            )
+    asyncio.run(
+        translate_single_cmd(
+            args.input,
+            args.output,
+            args.lang_from,
+            args.lang_to,
+            args.engine,
         )
-    except Exception as exc:  # noqa: BLE001
-        print(f"\033[31mFailed to translate subtitles: {exc}\033[0m")  # noqa: T201
-        sys.exit(1)
+    )
 
 
 if __name__ == "__main__":

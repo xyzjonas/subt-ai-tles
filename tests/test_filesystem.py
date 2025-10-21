@@ -5,7 +5,7 @@ import pytest
 
 from subtaitles import Lang
 from subtaitles.filesystem import (
-    TranslateTask,
+    TranslateTaskData,
     find_srt_files,
     get_new_language_file_path,
     get_translate_tasks,
@@ -75,9 +75,11 @@ def test_get_new_language_file_name(
 def test_get_translate_tasks(data: Path) -> None:
     target_dir = data / "nested_dir"
 
-    tasks = get_translate_tasks(path=target_dir, source=Lang.EN, target=Lang.CS)
-    assert tasks == [
-        TranslateTask(
+    tasks = get_translate_tasks(
+        path=target_dir, source=Lang.EN, target=Lang.CS, translator=MockedTranslator
+    )
+    assert [t.task_data for t in tasks] == [
+        TranslateTaskData(
             path=target_dir / "sub-short.srt",
             new_path=target_dir / "sub-short.cs.srt",
             source=Lang.EN,
@@ -88,7 +90,7 @@ def test_get_translate_tasks(data: Path) -> None:
 
 async def test_translate_directory_which_is_file(data: Path) -> None:
     with pytest.raises(FileNotFoundError):
-        await translate_directory(
+        translate_directory(
             data / "sub.srt", source=Lang.EN, target=Lang.CS, translator=MockedTranslator
         )
 
@@ -101,12 +103,15 @@ async def test_translate_directory(data: Path) -> None:
             with (temp_dir / "sub-short.srt").open("w") as dest_file:
                 dest_file.write(source_file.read())
 
-        res = await translate_directory(
+        tasks = translate_directory(
             temp_dir, source=Lang.EN, target=Lang.CS, translator=MockedTranslator
         )
 
-        assert len(res) == 1
-        dest_srt = res[0]
+        assert len(tasks) == 1
+        task = tasks[0]
+
+        await task.task
+        dest_srt = tasks[0].task_data.new_path
         assert dest_srt.is_file()
         assert dest_srt.name == "sub-short.cs.srt"
         assert dest_srt.read_text()

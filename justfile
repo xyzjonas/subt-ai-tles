@@ -7,6 +7,9 @@ default:
   just test
   just tox
 
+translate-dir DIR:
+  uv run translate_subtitles --dir --engine=openai --log-level=DEBUG {{ DIR }} '' en cs
+
 install:
   uv sync --group dev
 
@@ -16,8 +19,8 @@ test:
 tox:
   uv run tox -p
 
-lint:
-  uv run ruff check
+lint *ARGS:
+  uv run ruff check {{ARGS}}
 
 format:
   uv run ruff format
