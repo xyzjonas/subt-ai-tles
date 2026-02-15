@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from asyncio import Task
+from asyncio import InvalidStateError, Task
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -58,7 +58,10 @@ class TranslateTask:
 
     @property
     def exception(self) -> BaseException | None:
-        return self.task.exception()
+        try:
+            return self.task.exception()
+        except InvalidStateError:
+            return None
 
 
 def get_translate_task(

@@ -1,7 +1,13 @@
 # SUBT-AI-TLES
-A simple wrapper around LLMs that provides language translation interface for subtitles (.srt). 
+A simple wrapper around your LLM for movie subtitles translation that makes 
 
-## Predefined implementations
+### What does it do?
+- Parses the .srt
+- Requests individual lines to be translated by the LLM
+- Puts it all back together, making sure the sentences match the srt structure/timings
+- Caches results - which makes rerunning failed runs a possibility
+
+## Provided adapters
 > So far OpenAI API is the only supported/pre-implemented 'backend'
 
 Setup required environment variables and then simply import and invoke the function. 

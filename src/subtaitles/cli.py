@@ -6,8 +6,7 @@ from pathlib import Path
 
 from subtaitles import Engine, Lang
 from subtaitles.filesystem import translate_directory
-from subtaitles.task import TranslateTask
-from subtaitles.translate import get_translate_task
+from subtaitles.task import TranslateTask, get_translate_task
 
 
 def tasks_done(tasks: Iterable[TranslateTask]) -> bool:
