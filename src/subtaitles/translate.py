@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from copy import deepcopy
+from datetime import timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -9,8 +10,9 @@ import pysrt
 from pysrt import SubRipFile
 
 from .exceptions import FailedToTranslateError
+from .models import Segment, TranslationRequest
 from .providers import Engine, TranslateProtocol, get_translator
-from .srt import strip_srt_markup
+from .srt import reapply_whole_line_markup, strip_srt_markup
 
 if TYPE_CHECKING:
     from .language import Lang
@@ -39,14 +41,43 @@ async def translate_srt(
     if not hasattr(translator, "translate"):
         translator = get_translator(translator)
 
-    translations = await translator.translate(
-        strip_srt_markup([item.text for item in srt]), source, target, progress
+    segments = tuple(
+        Segment(
+            index=i,
+            text=strip_srt_markup(item.text),
+            raw=item.text,
+            start=timedelta(
+                hours=item.start.hours,
+                minutes=item.start.minutes,
+                seconds=item.start.seconds,
+                milliseconds=item.start.milliseconds,
+            ),
+            end=timedelta(
+                hours=item.end.hours,
+                minutes=item.end.minutes,
+                seconds=item.end.seconds,
+                milliseconds=item.end.milliseconds,
+            ),
+        )
+        for i, item in enumerate(srt)
     )
 
+    request = TranslationRequest(segments=segments, source=source, target=target)
+    response = await translator.translate(request, progress)
+
+    by_index = response.by_index()
+    seg_by_index = {seg.index: seg for seg in segments}
+
     result = SubRipFile(items=[])
-    for item, translation in zip(srt, translations, strict=False):
+    for i, item in enumerate(srt):
         new_item = deepcopy(item)
-        new_item.text = translation
+        translated = by_index.get(i)
+        if translated:
+            text = translated.translation
+            raw = seg_by_index[i].raw
+            if raw:
+                text = reapply_whole_line_markup(raw, text)
+            new_item.text = text
         result.append(new_item)
 
     return result

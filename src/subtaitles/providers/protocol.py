@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
-    from subtaitles.language import Lang
+    from subtaitles.models import TranslationRequest, TranslationResponse
 
 
 class Progress(Protocol):
@@ -14,8 +14,6 @@ class Progress(Protocol):
 class TranslateProtocol(Protocol):
     async def translate(
         self,
-        text: list[str],
-        language_from: Lang,
-        language_to: Lang,
+        request: TranslationRequest,
         progress: Progress | None = None,
-    ) -> list[str]: ...
+    ) -> TranslationResponse: ...

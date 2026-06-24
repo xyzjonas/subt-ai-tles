@@ -6,14 +6,16 @@ from typing import TYPE_CHECKING
 
 from openai import AsyncOpenAI
 
-from subtaitles.cache import CacheProtocol, disk_cache, get_cache_key
+from subtaitles.cache import CacheProtocol, disk_cache
 from subtaitles.environment import env
 from subtaitles.imports import batched
+from subtaitles.models import TranslatedSegment, TranslationResponse
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
     from subtaitles.language import Lang
+    from subtaitles.models import Segment, TranslationRequest
     from subtaitles.providers.protocol import Progress
 
 
@@ -70,69 +72,95 @@ Make sure that the number of lines separated by {delimiter} is equal.
 
     async def process_batch(  # noqa: PLR0913
         self,
-        text: list[str] | tuple[str],
-        language_from: Lang,
-        language_to: Lang,
+        segments: list[Segment],
+        source: Lang,
+        target: Lang,
         retries_left: int = 10,
         batch_id: int = 0,
         progress: Progress | None = None,
-    ) -> list[str]:
-        """Model has hard time keeping delimiters and not messing up overall."""
-        cache_key = get_cache_key(text[0], language_from, language_to)
-        if self.cache.get(cache_key):
-            if progress:
-                progress.current += 1
-            return self.cache[cache_key]
-
+    ) -> list[TranslatedSegment]:
         if retries_left < MIN_RETRIES_TO_LOG:
             logger.debug("Processing batch %d retries-left=%d", batch_id, retries_left)
 
-        completion = self.get_completion(language_from, language_to, text)
+        text = [seg.text for seg in segments]
+        completion = self.get_completion(source, target, text)
         response = await self.client.chat.completions.create(**completion)
         if not response.choices:
             if retries_left > 0:
                 return await self.process_batch(
-                    text, language_from, language_to, retries_left - 1
+                    segments, source, target, retries_left - 1, batch_id, progress
                 )
             msg = "GPT returned no predictions, unexpected..."
             raise ValueError(msg)
 
-        res = [line for line in response.choices[0].message.content.split(DELIMITER) if line]
-        if len(res) != len(text):
+        translations = [
+            line for line in response.choices[0].message.content.split(DELIMITER) if line
+        ]
+        if len(translations) != len(segments):
             if retries_left > 0:
                 return await self.process_batch(
-                    text, language_from, language_to, retries_left - 1
+                    segments, source, target, retries_left - 1, batch_id, progress
                 )
-            msg = f"Input lines count doesn't match output's line count! {text} --> {res}"
+            msg = (
+                f"Input lines count doesn't match output's line count! "
+                f"{text} --> {translations}"
+            )
             raise ValueError(msg)
 
         logger.debug("[OK] batch %d completed, retries-left=%d", batch_id, retries_left)
         if progress:
             progress.current += 1
 
-        self.cache[cache_key] = res
-        return res
+        results = []
+        for seg, translation in zip(segments, translations, strict=True):
+            key = seg.cache_key(source, target, self.model)
+            self.cache[key] = translation
+            results.append(
+                TranslatedSegment(
+                    index=seg.index,
+                    source=seg.text,
+                    translation=translation,
+                    status="translated",
+                )
+            )
+        return results
 
     async def translate(
         self,
-        text: list[str],
-        language_from: Lang,
-        language_to: Lang,
+        request: TranslationRequest,
         progress: Progress | None = None,
-    ) -> list[str]:
-        text = [line.strip() for line in text]
-        translated_lines = []
+    ) -> TranslationResponse:
+        source, target = request.source, request.target
+        cached_results: dict[int, TranslatedSegment] = {}
+        uncached: list[Segment] = []
 
-        tasks = []
-        for index, batch in enumerate(batched(text, self.batch_size, strict=False)):
-            tasks.append(
-                self.process_batch(
-                    list(batch), language_from, language_to, batch_id=index, progress=progress
+        for seg in request.segments:
+            key = seg.cache_key(source, target, self.model)
+            cached = self.cache.get(key)
+            if cached is not None:
+                cached_results[seg.index] = TranslatedSegment(
+                    index=seg.index,
+                    source=seg.text,
+                    translation=cached,
+                    status="translated",
                 )
+            else:
+                uncached.append(seg)
+
+        tasks = [
+            self.process_batch(
+                list(batch), source, target, batch_id=i, progress=progress
             )
+            for i, batch in enumerate(batched(uncached, self.batch_size, strict=False))
+        ]
 
-        progress.total = len(tasks)
-        for result in await asyncio.gather(*tasks):
-            translated_lines.extend(result)
+        if progress:
+            progress.total = len(tasks) + len(cached_results)
 
-        return translated_lines
+        all_results = dict(cached_results)
+        for batch_results in await asyncio.gather(*tasks):
+            for seg in batch_results:
+                all_results[seg.index] = seg
+
+        ordered = tuple(all_results[seg.index] for seg in request.segments)
+        return TranslationResponse(segments=ordered, source=source, target=target)
