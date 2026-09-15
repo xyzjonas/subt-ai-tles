@@ -29,8 +29,9 @@ class OpenAiTranslator:
     context = """Translate subtitles from {lang_from} to {lang_to} accurately while
 maintaining the original meaning and tone. Use natural-sounding phrases and idioms
 that accurately convey the meaning of the original text. KEEP the delimiters '{delimiter}'
-in place to indicate item borders! Response can't start or end with a {delimiter}.
-Make sure that the number of lines separated by {delimiter} is equal.
+in place to indicate item borders! Keep newlines \\n and \\r and do not consider them item
+delimiters,\nnewline characters are allowed within a single sentence. Response can't start or
+end with a {delimiter}. Make sure that the number of lines separated by {delimiter} is equal.
 """
 
     def __init__(
@@ -148,14 +149,13 @@ Make sure that the number of lines separated by {delimiter} is equal.
                 uncached.append(seg)
 
         tasks = [
-            self.process_batch(
-                list(batch), source, target, batch_id=i, progress=progress
-            )
+            self.process_batch(list(batch), source, target, batch_id=i, progress=progress)
             for i, batch in enumerate(batched(uncached, self.batch_size, strict=False))
         ]
 
         if progress:
-            progress.total = len(tasks) + len(cached_results)
+            # progress.total = len(tasks) + len(cached_results)
+            progress.total = len(request.segments)
 
         all_results = dict(cached_results)
         for batch_results in await asyncio.gather(*tasks):

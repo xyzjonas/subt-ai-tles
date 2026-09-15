@@ -29,5 +29,7 @@ upgrade:
   uv lock --upgrade
 
 publish:
+  @rm -rf ./dist
+  uv version --bump patch
   uv build
   uv publish

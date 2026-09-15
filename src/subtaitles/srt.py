@@ -10,6 +10,11 @@ def strip_srt_markup(text: str) -> str:
     return re.sub(_markup_pattern, "", text)
 
 
+def strip_newlines(text: str) -> str:
+    # return text.replace("\n", " ").replace("\r", " ")
+    return text
+
+
 def reapply_whole_line_markup(raw: str, translation: str) -> str:
     match = _whole_line_pattern.match(raw.strip())
     if match:

@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING
 import pysrt
 from pysrt import SubRipFile
 
+from subtaitles.srt import strip_newlines
+
 from .exceptions import FailedToTranslateError
 from .models import Segment, TranslationRequest
 from .providers import Engine, TranslateProtocol, get_translator
@@ -44,7 +46,7 @@ async def translate_srt(
     segments = tuple(
         Segment(
             index=i,
-            text=strip_srt_markup(item.text),
+            text=strip_newlines(strip_srt_markup(item.text)),
             raw=item.text,
             start=timedelta(
                 hours=item.start.hours,
