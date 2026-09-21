@@ -9,7 +9,10 @@ The translation contract is `list[str] -> list[str]`
 
 ```python
 async def translate(
-    self, text: list[str], language_from: Lang, language_to: Lang,
+    self,
+    text: list[str],
+    language_from: Lang,
+    language_to: Lang,
     progress: Progress | None = None,
 ) -> list[str]: ...
 ```
@@ -48,14 +51,15 @@ duplicates in any set/dict).
 from dataclasses import dataclass
 from datetime import timedelta
 
+
 @dataclass(frozen=True, slots=True)
 class Segment:
-    index: int                       # stable, contiguous (0..n-1), for reassembly
-    text: str                        # source text to translate (markup-stripped)
-    raw: str | None = None           # original text incl. <i> tags, lossless (see Markup)
-    start: timedelta | None = None   # timing — enables context windows (003)
+    index: int  # stable, contiguous (0..n-1), for reassembly
+    text: str  # source text to translate (markup-stripped)
+    raw: str | None = None  # original text incl. <i> tags, lossless (see Markup)
+    start: timedelta | None = None  # timing — enables context windows (003)
     end: timedelta | None = None
-    speaker: str | None = None       # filled by glossary pre-pass (003); None for now
+    speaker: str | None = None  # filled by glossary pre-pass (003); None for now
 
     def cache_key(self, source: "Lang", target: "Lang", model: str) -> str:
         """Derived cache key — NOT the object's identity."""
@@ -77,9 +81,10 @@ file; per-line duplication only invites inconsistency).
 ```python
 from collections.abc import Sequence
 
+
 @dataclass(frozen=True)
 class TranslationRequest:
-    segments: Sequence[Segment]      # Sequence, not Iterable — needs multiple passes
+    segments: Sequence[Segment]  # Sequence, not Iterable — needs multiple passes
     source: Lang
     target: Lang
     # extension point: future options (glossary, context window, model override)
@@ -97,12 +102,14 @@ type again.
 ```python
 from typing import Literal
 
+
 @dataclass(frozen=True, slots=True)
 class TranslatedSegment:
-    index: int                       # matches the source Segment.index
+    index: int  # matches the source Segment.index
     source: str
     translation: str
     status: Literal["translated", "passthrough", "failed"]
+
 
 @dataclass(frozen=True)
 class TranslationResponse:
@@ -111,10 +118,15 @@ class TranslationResponse:
     target: Lang
     # extension point: token usage / cost, warnings, timing — addable later
 
-    def __iter__(self): return iter(self.segments)
-    def __len__(self): return len(self.segments)
+    def __iter__(self):
+        return iter(self.segments)
+
+    def __len__(self):
+        return len(self.segments)
+
     def by_index(self) -> dict[int, TranslatedSegment]:
         return {s.index: s for s in self.segments}
+
     # convenience for 002/006 reporting, e.g. counts grouped by status
 ```
 
@@ -127,7 +139,9 @@ class TranslationResponse:
 ```python
 class TranslateProtocol(Protocol):
     async def translate(
-        self, request: TranslationRequest, progress: Progress | None = None,
+        self,
+        request: TranslationRequest,
+        progress: Progress | None = None,
     ) -> TranslationResponse: ...
 ```
 

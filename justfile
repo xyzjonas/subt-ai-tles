@@ -16,6 +16,9 @@ install:
 test:
   uv run pytest
 
+test-translate:
+  uv run translate_subtitles --log-level=DEBUG tests/data/rick-and-morty-S01E01.en.srt cs
+
 tox:
   uv run tox -p
 

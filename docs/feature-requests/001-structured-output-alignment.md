@@ -12,13 +12,14 @@ Current relevant code (`src/subtaitles/providers/openai.py`):
 
 ```python
 # line 67 — items joined by a text delimiter
-{"role": "user", "content": "---".join(items)},
+({"role": "user", "content": "---".join(items)},)
 
 # line 100 — output split back on the delimiter, empty segments dropped
 res = [line for line in response.choices[0].message.content.split(DELIMITER) if line]
 
 # line 101 — count mismatch forces retry, eventually raises
-if len(res) != len(text): ...
+if len(res) != len(text):
+    ...
 ```
 
 ### Why it breaks

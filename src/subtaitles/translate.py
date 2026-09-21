@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import logging
+from loguru import logger
 from copy import deepcopy
 from datetime import timedelta
 from pathlib import Path
@@ -10,9 +10,10 @@ import pysrt
 from pysrt import SubRipFile
 
 from subtaitles.srt import strip_newlines
+from . import TranslationResponse
 
 from .exceptions import FailedToTranslateError
-from .models import Segment, TranslationRequest
+from .models import Segment, TranslationRequest, TitleMetadata
 from .providers import Engine, TranslateProtocol, get_translator
 from .srt import reapply_whole_line_markup, strip_srt_markup
 
@@ -21,27 +22,34 @@ if TYPE_CHECKING:
     from .providers.protocol import Progress
 
 
-logger = logging.getLogger(__name__)
-
-
-async def translate_srt(
+async def get_translation_request(
     srt: SubRipFile,
     source: Lang,
     target: Lang,
     translator: Engine | TranslateProtocol,
-    progress: Progress | None = None,
-) -> SubRipFile:
-    """Translate subtitle file (.srt) a parsed SubRipFile object.
-
-    :param srt: parsed srt file
-    :param source: source language
-    :param target: target language
-    :param translator: translation engine or translator instance
-    :param progress: progress object
-    :return: translated subtitle file as SubRipFile object
-    """
+) -> tuple[TranslateProtocol, TranslationRequest]:
     if not hasattr(translator, "translate"):
         translator = get_translator(translator)
+
+    meta = None
+    try:
+        from mediasorter import whats_this, TvShowMetadata
+
+        fetched_meta = await whats_this(str(Path(srt.path)))
+        if isinstance(fetched_meta, TvShowMetadata):
+            logger.debug(
+                f"Recognized as {fetched_meta.type}: {fetched_meta.series_title}, adding to context."
+            )
+            meta = TitleMetadata(
+                title=fetched_meta.series_title, description=fetched_meta.episode_summary
+            )
+        else:
+            logger.debug(
+                f"Recognized as {fetched_meta.type}: {fetched_meta.title}, adding to context."
+            )
+            meta = TitleMetadata(title=fetched_meta.title, description=fetched_meta.summary)
+    except Exception as e:
+        logger.warning(f"Can't fetch media metadata: {e}")
 
     segments = tuple(
         Segment(
@@ -64,12 +72,16 @@ async def translate_srt(
         for i, item in enumerate(srt)
     )
 
-    request = TranslationRequest(segments=segments, source=source, target=target)
-    response = await translator.translate(request, progress)
+    return translator, TranslationRequest(
+        segments=segments, source=source, target=target, metadata=meta
+    )
 
+
+def get_translated_srt(
+    srt: SubRipFile, request: TranslationRequest, response: TranslationResponse
+) -> SubRipFile:
     by_index = response.by_index()
-    seg_by_index = {seg.index: seg for seg in segments}
-
+    seg_by_index = {seg.index: seg for seg in request.segments}
     result = SubRipFile(items=[])
     for i, item in enumerate(srt):
         new_item = deepcopy(item)
@@ -83,6 +95,29 @@ async def translate_srt(
         result.append(new_item)
 
     return result
+
+
+async def translate_srt(
+    srt: SubRipFile,
+    source: Lang,
+    target: Lang,
+    translator: Engine | TranslateProtocol,
+    progress: Progress | None = None,
+) -> SubRipFile:
+    """Translate subtitle file (.srt) a parsed SubRipFile object.
+
+    :param srt: parsed srt file
+    :param source: source language
+    :param target: target language
+    :param translator: translation engine or translator instance
+    :param progress: progress object
+    :return: translated subtitle file as SubRipFile object
+    """
+    translator, request = await get_translation_request(srt, source, target, translator)
+
+    response = await translator.translate(request, progress)
+
+    return get_translated_srt(srt, request, response)
 
 
 async def translate_srt_file(  # noqa: PLR0913
@@ -105,16 +140,18 @@ async def translate_srt_file(  # noqa: PLR0913
     """
     try:
         path = Path(path)
-        logger.info("Translating subtitle file %s", path)
+        logger.info(f"Translating subtitle file {path}")
         filename, ext = path.name.rsplit(".", 1)
-        new_path = Path(new_path) or path.parent / f"{filename}-{target}.{ext}"
+        new_path = Path(new_path) or path.parent
+        if new_path.is_dir():
+            new_path = new_path / f"{filename}.{target.value}.{ext}"
         srt = pysrt.open(path.absolute())
 
         result = await translate_srt(srt, source, target, translator, progress)
         with new_path.open("w") as file:
             result.write_into(file)
 
-        logger.info("Translated subtitles written to %s", new_path)
+        logger.info(f"Translated subtitles written to {new_path}")
     except ValueError as exc:
         raise FailedToTranslateError(path, new_path, f"Translator failed: {exc}") from exc
     except Exception as exc:

@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass, field
 from enum import Enum
 
@@ -46,3 +47,13 @@ class Lang(Enum):
     @property
     def language(self) -> Language:
         return mapping[self.value]
+
+
+def guess_lang(text: str) -> Lang | None:
+    languages = "|".join({lang.value for lang in Lang})
+    pattern = re.compile(r"\.(" + languages + r")\.")
+    matches = pattern.findall(text)
+    if matches:
+        return Lang(matches[-1])
+
+    return None

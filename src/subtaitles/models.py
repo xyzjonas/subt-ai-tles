@@ -25,11 +25,18 @@ class Segment:
         return hashlib.sha256(content.encode()).hexdigest()
 
 
+@dataclass(frozen=True, slots=True)
+class TitleMetadata:
+    title: str
+    description: str
+
+
 @dataclass(frozen=True)
 class TranslationRequest:
     segments: Sequence[Segment]
     source: Lang
     target: Lang
+    metadata: TitleMetadata | None = None
 
 
 @dataclass(frozen=True, slots=True)

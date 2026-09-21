@@ -22,7 +22,7 @@ asyncio.run(
         new_path="/tmp/subtitles.de.srt",
         translator=Engine.OPEN_AI,
         source=Lang.EN,
-        target=Lang.DE
+        target=Lang.DE,
     )
 )
 ```
@@ -50,7 +50,7 @@ asyncio.run(
         path="/tmp/data/shows/foo/season-01",
         translator=Engine.OPEN_AI,
         source=Lang.EN,
-        target=Lang.DE
+        target=Lang.DE,
     )
 )
 ```
@@ -62,12 +62,17 @@ the `translate_srt_file()` and `translate_srt()`
 import asyncio
 from subtaitles import Lang, translate_srt_file
 
+
 class MyCustomTranslator:
-     async def translate(
-        self, text: list[str], language_from: Lang, language_to: Lang,
+    async def translate(
+        self,
+        text: list[str],
+        language_from: Lang,
+        language_to: Lang,
     ) -> list[str]:
         # <implement whatever floats your boat>
         ...
+
 
 asyncio.run(
     translate_srt_file(
@@ -75,7 +80,7 @@ asyncio.run(
         new_path="/tmp/subtitles.de.srt",
         translator=MyCustomTranslator(),
         source=Lang.EN,
-        target=Lang.DE
+        target=Lang.DE,
     )
 )
 ```

@@ -11,7 +11,7 @@ Current relevant code (`src/subtaitles/providers/openai.py`):
 
 ```python
 # line 67 — each batch is just 10 isolated lines, no surrounding dialogue
-{"role": "user", "content": "---".join(items)},
+({"role": "user", "content": "---".join(items)},)
 ```
 
 Batches also run **independently and concurrently** (`translate.py` →

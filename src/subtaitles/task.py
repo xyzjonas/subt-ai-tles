@@ -72,7 +72,10 @@ def get_translate_task(
     translator: Engine | TranslateProtocol,
 ) -> TranslateTask:
     path = Path(path)
-    new_path = Path(new_path)
+    new_path = Path(new_path) or path.parent
+    if new_path.is_dir():
+        new_path = new_path / f"{Path(path.stem).stem}.{target.value}{path.suffix}"
+
     if not path.exists():
         msg = "Supplied path does NOT exist"
         raise FileNotFoundError(msg)

@@ -11,7 +11,7 @@
 
 ```python
 # providers/openai.py:39
-batch_size: int = 10,
+batch_size: int = (10,)
 ```
 
 ## Proposed solution
