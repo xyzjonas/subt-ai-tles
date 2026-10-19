@@ -1,8 +1,17 @@
 <script setup lang="ts">
+import { useRouter } from "vue-router";
+import { clearSession } from "../../api/session";
 import AppIcon from "../ui/AppIcon.vue";
 import StatusBadge from "../ui/StatusBadge.vue";
 
 defineProps<{ subtitle: string }>();
+
+const router = useRouter();
+
+function signOut() {
+  clearSession();
+  router.push({ name: "login" });
+}
 </script>
 
 <template>
@@ -20,7 +29,7 @@ defineProps<{ subtitle: string }>();
         <RouterLink to="/requests">My requests</RouterLink>
       </nav>
       <StatusBadge tone="success" dot pulse>LLM v2.4 Active</StatusBadge>
-      <button type="button" class="avatar" aria-label="Account and settings">
+      <button type="button" class="avatar" aria-label="Sign out" title="Sign out" @click="signOut">
         <AppIcon name="user" :size="18" />
       </button>
     </div>

@@ -11,7 +11,7 @@ import { useCueEditor } from "../composables/useCueEditor";
 import { compileSrt, downloadBlob, srtBlob, translatedFileName } from "../utils/srt";
 
 const route = useRoute();
-const { job, cues, loading, error, query, filter, counts, visible, remaining, runningTime, variants, status, load, setTarget, retranslate, dismiss, toggleFlag, showMore } =
+const { job, cues, loading, error, query, filter, counts, visible, remaining, runningTime, variants, status, saving, pending, load, propose, accept, discard, retranslate, dismiss, toggleFlag, showMore } =
   useCueEditor(computed(() => String(route.params.id)));
 
 const canShare = "share" in navigator;
@@ -34,7 +34,7 @@ function share() {
 }
 
 function sync() {
-  if (counts.value.modified && !confirm("Re-syncing reloads all lines and discards your edits. Continue?")) return;
+  if (pending.value && !confirm("Re-syncing reloads all lines and discards changes you haven't accepted. Continue?")) return;
   load();
 }
 </script>
@@ -60,8 +60,11 @@ function sync() {
           :target-lang="job.targetLang"
           :variants="variants[cue.index]"
           :status="status[cue.index]"
+          :saving="saving[cue.index]"
           @retranslate="retranslate(cue, $event)"
-          @apply="setTarget(cue, $event)"
+          @propose="propose(cue, $event)"
+          @accept="accept(cue)"
+          @discard="discard(cue)"
           @flag="toggleFlag(cue)"
           @dismiss="dismiss(cue)"
         />

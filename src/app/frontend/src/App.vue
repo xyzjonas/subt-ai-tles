@@ -7,10 +7,12 @@ import StackHeader from "./components/shell/StackHeader.vue";
 
 const route = useRoute();
 const stack = computed(() => route.meta.layout === "stack");
+const bare = computed(() => route.meta.layout === "bare");
 </script>
 
 <template>
-  <div class="shell">
+  <RouterView v-if="bare" />
+  <div v-else class="shell">
     <StackHeader v-if="stack" :title="String(route.meta.title)" :subtitle="String(route.meta.subtitle)" back-to="/requests" />
     <AppHeader v-else :subtitle="String(route.meta.subtitle ?? '')" />
     <main class="content" :class="{ stack }">

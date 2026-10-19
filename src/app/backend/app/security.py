@@ -19,11 +19,9 @@ def current_user(
         else None
     )
     if user is None:
-        raise HTTPException(
-            status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid credentials",
-            headers={"WWW-Authenticate": 'Basic realm="subt-ai-tles", charset="UTF-8"'},
-        )
+        # No WWW-Authenticate challenge: it would make browsers show their native
+        # login dialog instead of letting the frontend redirect to its login page.
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
     return user
 
 

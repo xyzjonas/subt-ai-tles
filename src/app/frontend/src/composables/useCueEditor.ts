@@ -1,5 +1,5 @@
 import { computed, reactive, ref, watch, type Ref } from "vue";
-import { listCues, retranslateCue } from "../api/cues";
+import { listCues, retranslateCue, updateCue } from "../api/cues";
 import { getJob } from "../api/jobs";
 import type { Cue, CueVariant, Job } from "../api/types";
 import { cps } from "../utils/srt";
@@ -12,6 +12,8 @@ export interface EditorCue extends Cue {
   /** Target as originally translated by the model. */
   aiTarget: string;
   flagged: boolean;
+  /** Proposed replacement (picked variant or manual edit), not stored until accepted. */
+  draft?: string;
   modifiedAt?: number;
 }
 
@@ -34,6 +36,7 @@ export function useCueEditor(jobId: Ref<string>) {
 
   const variants = reactive<Record<number, CueVariant[]>>({});
   const status = reactive<Record<number, "loading" | "error">>({});
+  const saving = reactive<Record<number, "saving" | "error">>({});
 
   async function load() {
     loading.value = true;
@@ -44,6 +47,7 @@ export function useCueEditor(jobId: Ref<string>) {
       cues.value = raw.map((c) => ({ ...c, aiTarget: c.target, flagged: false }));
       for (const key of Object.keys(variants)) delete variants[Number(key)];
       for (const key of Object.keys(status)) delete status[Number(key)];
+      for (const key of Object.keys(saving)) delete saving[Number(key)];
     } catch {
       error.value = "We couldn't load this request.";
     } finally {
@@ -73,16 +77,36 @@ export function useCueEditor(jobId: Ref<string>) {
   const remaining = computed(() => filtered.value.length - visible.value.length);
   const runningTime = computed(() => cues.value[cues.value.length - 1]?.end ?? 0);
 
-  function setTarget(cue: EditorCue, text: string) {
-    if (!text || text === cue.target) return;
-    cue.target = text;
-    cue.modifiedAt = Date.now();
+  /** Stages `text` on the cue; it only differs from the stored translation if it is a real change. */
+  function propose(cue: EditorCue, text: string) {
+    if (!text) return;
+    cue.draft = text === cue.target ? undefined : text;
+    delete saving[cue.index];
+  }
+
+  async function accept(cue: EditorCue) {
+    if (cue.draft === undefined) return;
+    saving[cue.index] = "saving";
+    try {
+      const stored = await updateCue(jobId.value, cue.index, cue.draft);
+      cue.target = stored.target;
+      cue.modifiedAt = cue.target === cue.aiTarget ? undefined : Date.now();
+      cue.draft = undefined;
+      delete saving[cue.index];
+    } catch {
+      saving[cue.index] = "error";
+    }
+  }
+
+  function discard(cue: EditorCue) {
+    cue.draft = undefined;
+    delete saving[cue.index];
   }
 
   async function retranslate(cue: EditorCue, prompt?: string) {
     status[cue.index] = "loading";
     try {
-      const fresh = await retranslateCue(jobId.value, cue, prompt);
+      const fresh = await retranslateCue(jobId.value, cue.index, prompt);
       variants[cue.index] = prompt ? [...(variants[cue.index] ?? []), ...fresh] : fresh;
       delete status[cue.index];
     } catch {
@@ -95,8 +119,9 @@ export function useCueEditor(jobId: Ref<string>) {
     delete status[cue.index];
   };
 
+  const pending = computed(() => cues.value.filter((c) => c.draft !== undefined).length);
   const toggleFlag = (cue: EditorCue) => (cue.flagged = !cue.flagged);
   const showMore = () => (limit.value += PAGE_SIZE);
 
-  return { job, cues, loading, error, query, filter, counts, visible, remaining, runningTime, variants, status, load, setTarget, retranslate, dismiss, toggleFlag, showMore };
+  return { job, cues, loading, error, query, filter, counts, visible, remaining, runningTime, variants, status, saving, pending, load, propose, accept, discard, retranslate, dismiss, toggleFlag, showMore };
 }

@@ -13,18 +13,24 @@ const props = defineProps<{
   targetLang: string;
   variants?: CueVariant[];
   status?: "loading" | "error";
+  saving?: "saving" | "error";
 }>();
 const emit = defineEmits<{
   retranslate: [prompt?: string];
-  apply: [text: string];
+  propose: [text: string];
+  accept: [];
+  discard: [];
   flag: [];
   dismiss: [];
 }>();
 
+/** What the target panel shows: the pending draft if there is one, else the stored text. */
+const shown = computed(() => props.cue.draft ?? props.cue.target);
+const pending = computed(() => props.cue.draft !== undefined);
 const expanded = computed(() => !!props.variants || props.status === "loading");
 const activeOption = computed(
   () =>
-    (props.variants?.findIndex((v) => v.text === props.cue.target) ?? -1) + 1,
+    (props.variants?.findIndex((v) => v.text === shown.value) ?? -1) + 1,
 );
 const duration = computed(() =>
   ((props.cue.end - props.cue.start) / 1000).toFixed(1),
@@ -37,7 +43,7 @@ const draft = ref("");
 const field = useTemplateRef("field");
 
 async function edit() {
-  draft.value = props.cue.target;
+  draft.value = shown.value;
   editing.value = true;
   await nextTick();
   field.value?.focus();
@@ -46,7 +52,7 @@ async function edit() {
 function save() {
   if (!editing.value) return;
   editing.value = false;
-  emit("apply", draft.value.trim());
+  emit("propose", draft.value.trim());
 }
 </script>
 
@@ -81,7 +87,7 @@ function save() {
           <span class="dot target-dot" />
           {{ targetLang.toUpperCase() }} (TARGET)
           <span class="tag">{{
-            cue.modifiedAt ? "Edited" : "Auto-tuned"
+            pending ? "Unsaved" : cue.modifiedAt ? "Edited" : "Auto-tuned"
           }}</span>
         </h3>
         <textarea
@@ -94,20 +100,23 @@ function save() {
           @blur="save"
           @keydown.esc.prevent="editing = false"
         />
-        <p v-else class="translation" :lang="targetLang">{{ cue.target }}</p>
+        <p v-else class="translation" :lang="targetLang">{{ shown }}</p>
       </section>
     </div>
 
     <VariantPicker
       v-if="expanded"
       :variants="variants ?? []"
-      :current="cue.target"
+      :current="shown"
       :busy="status === 'loading'"
-      @pick="emit('apply', $event)"
+      @pick="emit('propose', $event)"
       @run="emit('retranslate', $event)"
     />
     <p v-if="status === 'error'" class="error" role="alert">
       Couldn't fetch alternatives. Try again.
+    </p>
+    <p v-if="saving === 'error'" class="error" role="alert">
+      Couldn't save this line. Try again.
     </p>
 
     <footer class="foot">
@@ -129,6 +138,24 @@ function save() {
       <button v-else type="button" @click="edit">
         <AppIcon name="edit" :size="14" />
         {{ expanded ? "Manual Edit" : "Edit" }}
+      </button>
+      <button
+        v-if="pending"
+        type="button"
+        class="accept"
+        :disabled="saving === 'saving'"
+        @click="emit('accept')"
+      >
+        <AppIcon name="check" :size="14" />
+        {{ saving === "saving" ? "Saving…" : "Accept" }}
+      </button>
+      <button
+        v-if="pending"
+        type="button"
+        :disabled="saving === 'saving'"
+        @click="emit('discard')"
+      >
+        <AppIcon name="close" :size="14" /> Discard
       </button>
       <button
         type="button"
@@ -298,14 +325,21 @@ textarea {
   background: var(--border);
 }
 
-.foot .done {
+.foot .done,
+.foot .accept {
   background: var(--primary);
   border-color: var(--primary);
   color: #fff;
 }
 
-.foot .done:hover {
+.foot .done:hover,
+.foot .accept:hover:not(:disabled) {
   background: var(--primary-hover);
+}
+
+.foot button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .flag {
