@@ -1,5 +1,7 @@
 # How-to
 
+- use literal relative paths, no shell variables or command substitution in file commands
+
 ## UI/UX Design/implementation
 
 - always consult 00-DESIGN-SYSTEM.md file whenever creating a new UI component

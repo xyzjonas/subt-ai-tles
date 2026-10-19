@@ -26,7 +26,7 @@ dev = [
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto" # or "strict"
-testpaths = ["src/lib/tests"]
+testpaths = ["src/lib/tests", "src/app/backend/tests"]
 
 [tool.ruff]
 # Target Python version
@@ -163,3 +163,8 @@ lint.ignore = [
     "ISC001", # Implicitly concatenated string literals (conflicts with formatter)
     "S101",
 ]
+
+[tool.ruff.lint.per-file-ignores]
+"src/app/backend/migrations/*" = ["INP001"]
+"src/app/backend/migrations/versions/*" = ["INP001", "D", "E501", "I", "Q", "UP", "W291", "W293", "ANN"]
+"src/app/backend/tests/*" = ["PLR2004", "ANN", "S105", "S106", "D", "E501", "PLR0913"]

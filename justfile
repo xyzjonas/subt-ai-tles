@@ -37,8 +37,16 @@ publish:
   uv build --package subt-ai-tles
   uv publish dist/*
 
-dev:
+dev: db-upgrade
   uv run --package subt-ai-tles-app uvicorn app.main:app --reload
+
+# Apply database migrations (DATABASE_URL from .env or the environment).
+db-upgrade:
+  uv run --package subt-ai-tles-app alembic -c src/app/backend/alembic.ini upgrade head
+
+# Generate a migration from model changes: just db-revision "add foo column"
+db-revision MESSAGE:
+  uv run --package subt-ai-tles-app alembic -c src/app/backend/alembic.ini revision --autogenerate -m "{{ MESSAGE }}"
 
 [working-directory: 'src/app/frontend']
 ui:
