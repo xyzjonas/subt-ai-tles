@@ -19,6 +19,7 @@
   --success-text: #065f46;
   --warning: #f59e0b;
   --warning-bg: #fffbeb;
+  --warning-strong: #d97706;
   --processing: #2563eb;
   --danger: #ef4444;
   --danger-bg: #fef2f2;
@@ -34,10 +35,12 @@
   --radius-sm: 8px;
   --radius-md: 10px;
   --radius-lg: 12px;
+  --radius-tag: 3px;
   --shadow-primary: 0 4px 14px rgba(79, 70, 229, 0.3);
 
   --header-height: 60px;
   --dock-height: 64px;
+  --action-bar-height: 80px;
   --content-max: 480px;
   --page-padding: 20px;
 }
@@ -104,7 +107,6 @@ a {
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.05em;
-  text-transform: uppercase;
   color: var(--text-secondary);
 }
 

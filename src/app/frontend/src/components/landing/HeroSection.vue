@@ -4,7 +4,7 @@ import StatusBadge from "../ui/StatusBadge.vue";
 
 <template>
   <section class="hero">
-    <StatusBadge tone="primary">✦ Contextual Neural Engine</StatusBadge>
+    <StatusBadge tone="primary">✦ Contextual neural engine</StatusBadge>
     <h1>Translate subtitles with AI</h1>
     <p>Upload any .srt file, pick your languages, and let LLMs deliver contextual, synchronized translations.</p>
   </section>

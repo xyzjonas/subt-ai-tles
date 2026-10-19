@@ -10,7 +10,7 @@ import AppIcon from "../ui/AppIcon.vue";
     </RouterLink>
     <RouterLink to="/requests" class="tab">
       <AppIcon name="list" />
-      My Requests
+      My requests
     </RouterLink>
   </nav>
 </template>

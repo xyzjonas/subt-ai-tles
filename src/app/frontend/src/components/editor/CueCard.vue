@@ -1,0 +1,335 @@
+<script setup lang="ts">
+import { computed, nextTick, ref, useTemplateRef } from "vue";
+import type { CueVariant } from "../../api/types";
+import { CPS_LIMIT, type EditorCue } from "../../composables/useCueEditor";
+import { cps, formatTimecode, timeAgo } from "../../utils/srt";
+import AppIcon from "../ui/AppIcon.vue";
+import StatusBadge from "../ui/StatusBadge.vue";
+import VariantPicker from "./VariantPicker.vue";
+
+const props = defineProps<{
+  cue: EditorCue;
+  sourceLang: string;
+  targetLang: string;
+  variants?: CueVariant[];
+  status?: "loading" | "error";
+}>();
+const emit = defineEmits<{
+  retranslate: [prompt?: string];
+  apply: [text: string];
+  flag: [];
+  dismiss: [];
+}>();
+
+const expanded = computed(() => !!props.variants || props.status === "loading");
+const activeOption = computed(
+  () =>
+    (props.variants?.findIndex((v) => v.text === props.cue.target) ?? -1) + 1,
+);
+const duration = computed(() =>
+  ((props.cue.end - props.cue.start) / 1000).toFixed(1),
+);
+const fast = computed(() => cps(props.cue) > CPS_LIMIT);
+const index = computed(() => String(props.cue.index).padStart(3, "0"));
+
+const editing = ref(false);
+const draft = ref("");
+const field = useTemplateRef("field");
+
+async function edit() {
+  draft.value = props.cue.target;
+  editing.value = true;
+  await nextTick();
+  field.value?.focus();
+}
+
+function save() {
+  if (!editing.value) return;
+  editing.value = false;
+  emit("apply", draft.value.trim());
+}
+</script>
+
+<template>
+  <article class="cue" :class="{ expanded }">
+    <header class="head">
+      <span class="index mono">#{{ index }}</span>
+      <p class="time mono">
+        <AppIcon name="play" :size="10" /> {{ formatTimecode(cue.start) }} →
+        {{ formatTimecode(cue.end) }}
+      </p>
+      <StatusBadge v-if="expanded && activeOption" tone="primary"
+        >Option {{ activeOption }} Active</StatusBadge
+      >
+      <StatusBadge v-else-if="cue.modifiedAt" tone="success"
+        >Modified</StatusBadge
+      >
+      <StatusBadge v-if="fast" tone="warning">High CPS</StatusBadge>
+      <span class="duration mono">{{ duration }}s</span>
+    </header>
+
+    <div class="texts">
+      <section class="block">
+        <h3 class="section-label">
+          <span class="dot" /> {{ sourceLang.toUpperCase() }} (SOURCE)
+        </h3>
+        <p class="source">{{ cue.source }}</p>
+      </section>
+
+      <section class="block target">
+        <h3 class="section-label">
+          <span class="dot target-dot" />
+          {{ targetLang.toUpperCase() }} (TARGET)
+          <span class="tag">{{
+            cue.modifiedAt ? "Edited" : "Auto-tuned"
+          }}</span>
+        </h3>
+        <textarea
+          v-if="editing"
+          ref="field"
+          v-model="draft"
+          rows="2"
+          :lang="targetLang"
+          aria-label="Edit translation"
+          @blur="save"
+          @keydown.esc.prevent="editing = false"
+        />
+        <p v-else class="translation" :lang="targetLang">{{ cue.target }}</p>
+      </section>
+    </div>
+
+    <VariantPicker
+      v-if="expanded"
+      :variants="variants ?? []"
+      :current="cue.target"
+      :busy="status === 'loading'"
+      @pick="emit('apply', $event)"
+      @run="emit('retranslate', $event)"
+    />
+    <p v-if="status === 'error'" class="error" role="alert">
+      Couldn't fetch alternatives. Try again.
+    </p>
+
+    <footer class="foot">
+      <button v-if="!expanded" type="button" @click="emit('retranslate')">
+        <AppIcon name="retry" :size="14" /> Re-translate
+      </button>
+      <button v-else type="button" @click="emit('dismiss')">
+        <AppIcon name="close" :size="14" /> Close
+      </button>
+      <button
+        v-if="editing"
+        type="button"
+        class="done"
+        @mousedown.prevent
+        @click="save"
+      >
+        <AppIcon name="check" :size="14" /> Done
+      </button>
+      <button v-else type="button" @click="edit">
+        <AppIcon name="edit" :size="14" />
+        {{ expanded ? "Manual Edit" : "Edit" }}
+      </button>
+      <button
+        type="button"
+        class="flag"
+        :class="{ on: cue.flagged }"
+        :aria-pressed="cue.flagged"
+        :aria-label="cue.flagged ? 'Remove flag' : 'Flag cue'"
+        @click="emit('flag')"
+      >
+        <AppIcon name="flag" :size="14" />
+      </button>
+      <span v-if="expanded && cue.modifiedAt" class="ago"
+        >Re-translated
+        {{ timeAgo(new Date(cue.modifiedAt).toISOString()) }}</span
+      >
+    </footer>
+  </article>
+</template>
+
+<style scoped>
+.cue {
+  display: grid;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.cue.expanded {
+  border: 2px solid var(--primary);
+  padding: 13px 15px;
+  box-shadow: 0 6px 20px var(--primary-glow);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.index {
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: #e0e7ff;
+  color: #4338ca;
+  font-size: 12px;
+}
+
+.time {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.duration {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.texts {
+  display: grid;
+  gap: 10px;
+}
+
+.block {
+  display: grid;
+  gap: 4px;
+}
+
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-placeholder);
+}
+
+.target-dot {
+  background: var(--primary);
+}
+
+.tag {
+  margin-left: auto;
+  padding: 1px 8px;
+  border-radius: var(--radius-tag);
+  background: var(--primary-tint);
+  color: var(--primary);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.source {
+  font-size: 14px;
+  color: #1e293b;
+  white-space: pre-line;
+}
+
+.target {
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.translation,
+textarea {
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: pre-line;
+}
+
+textarea {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  resize: none;
+  field-sizing: content;
+  background: none;
+  color: var(--text);
+}
+
+.target:focus-within {
+  outline: 2px solid var(--primary);
+}
+
+.error {
+  font-size: 12px;
+  color: var(--danger);
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.foot button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-subdued);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.foot button:hover {
+  background: var(--border);
+}
+
+.foot .done {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.foot .done:hover {
+  background: var(--primary-hover);
+}
+
+.flag {
+  width: 32px;
+  padding: 0;
+  justify-content: center;
+}
+
+.flag.on {
+  background: var(--warning-bg);
+  border-color: var(--warning);
+  color: var(--warning-strong);
+}
+
+.ago {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+@media (min-width: 768px) {
+  .texts {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}
+</style>

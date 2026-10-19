@@ -1,5 +1,5 @@
 <script setup lang="ts">
-defineProps<{ tone?: "success" | "primary" | "neutral"; dot?: boolean; pulse?: boolean }>();
+defineProps<{ tone?: "success" | "primary" | "warning" | "neutral"; dot?: boolean; pulse?: boolean }>();
 </script>
 
 <template>
@@ -16,7 +16,7 @@ defineProps<{ tone?: "success" | "primary" | "neutral"; dot?: boolean; pulse?: b
   gap: 6px;
   padding: 3px 10px;
   border: 1px solid transparent;
-  border-radius: 999px;
+  border-radius: var(--radius-tag);
   font-size: 11px;
   font-weight: 600;
   white-space: nowrap;
@@ -26,6 +26,15 @@ defineProps<{ tone?: "success" | "primary" | "neutral"; dot?: boolean; pulse?: b
   background: var(--success-bg);
   color: var(--success-text);
   border-color: var(--success-border);
+}
+
+.warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.warning .dot {
+  background: var(--warning-strong);
 }
 
 .primary {

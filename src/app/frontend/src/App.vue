@@ -1,18 +1,22 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import { useRoute } from "vue-router";
 import AppHeader from "./components/shell/AppHeader.vue";
 import BottomDock from "./components/shell/BottomDock.vue";
+import StackHeader from "./components/shell/StackHeader.vue";
 
 const route = useRoute();
+const stack = computed(() => route.meta.layout === "stack");
 </script>
 
 <template>
   <div class="shell">
-    <AppHeader :subtitle="String(route.meta.subtitle ?? '')" />
-    <main class="content">
+    <StackHeader v-if="stack" :title="String(route.meta.title)" :subtitle="String(route.meta.subtitle)" back-to="/requests" />
+    <AppHeader v-else :subtitle="String(route.meta.subtitle ?? '')" />
+    <main class="content" :class="{ stack }">
       <RouterView />
     </main>
-    <BottomDock />
+    <BottomDock v-if="!stack" />
   </div>
 </template>
 
@@ -32,5 +36,9 @@ const route = useRoute();
     padding-top: calc(var(--header-height) + 32px);
     padding-bottom: 48px;
   }
+}
+
+.content.stack {
+  padding-bottom: calc(var(--action-bar-height) + 32px);
 }
 </style>

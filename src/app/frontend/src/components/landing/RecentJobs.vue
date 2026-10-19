@@ -13,8 +13,8 @@ onMounted(async () => {
 <template>
   <section class="recent" aria-labelledby="recent-heading">
     <div class="head">
-      <h2 id="recent-heading">Recent Subtitle Jobs</h2>
-      <RouterLink to="/requests">View All</RouterLink>
+      <h2 id="recent-heading">Recent subtitle jobs</h2>
+      <RouterLink to="/requests">View all</RouterLink>
     </div>
     <ul class="list">
       <li v-for="job in jobs" :key="job.id"><JobListItem :job="job" /></li>
@@ -48,7 +48,12 @@ a {
 
 .list {
   display: grid;
+  grid-auto-rows: 1fr;
   gap: 8px;
+}
+
+.list li {
+  display: grid;
 }
 
 @media (min-width: 768px) {

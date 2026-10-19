@@ -17,7 +17,7 @@ defineProps<{ subtitle: string }>();
       </RouterLink>
       <nav class="nav" aria-label="Primary">
         <RouterLink to="/">Translate</RouterLink>
-        <RouterLink to="/requests">My Requests</RouterLink>
+        <RouterLink to="/requests">My requests</RouterLink>
       </nav>
       <StatusBadge tone="success" dot pulse>LLM v2.4 Active</StatusBadge>
       <button type="button" class="avatar" aria-label="Account and settings">

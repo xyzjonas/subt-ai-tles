@@ -8,12 +8,15 @@ defineProps<{ job: Job }>();
 </script>
 
 <template>
-  <RouterLink :to="{ name: 'job', params: { id: job.id } }" class="item">
+  <RouterLink :to="{ name: job.status === 'ready' ? 'editor' : 'job', params: { id: job.id } }" class="item">
     <span class="icon"><AppIcon name="file" :size="18" /></span>
     <span class="info">
       <span class="name mono">{{ job.fileName }}</span>
       <span class="meta">
-        {{ job.sourceLang.toUpperCase() }} → {{ job.targetLang.toUpperCase() }} • {{ job.cueCount.toLocaleString() }} cues • {{ timeAgo(job.createdAt) }}
+        <span class="langs">
+          {{ job.sourceLang.toUpperCase() }} <AppIcon name="arrow" :size="12" /> {{ job.targetLang.toUpperCase() }}
+        </span>
+        • {{ job.cueCount.toLocaleString() }} cues • {{ timeAgo(job.createdAt) }}
       </span>
     </span>
     <StatusBadge :tone="job.status === 'ready' ? 'success' : 'neutral'">
@@ -26,6 +29,9 @@ defineProps<{ job: Job }>();
 .item {
   display: flex;
   align-items: center;
+  align-self: stretch;
+  height: 100%;
+  box-sizing: border-box;
   gap: 12px;
   padding: 12px;
   background: var(--surface);
@@ -66,5 +72,12 @@ defineProps<{ job: Job }>();
 .meta {
   font-size: 11px;
   color: var(--text-muted);
+}
+
+.langs {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  vertical-align: middle;
 }
 </style>

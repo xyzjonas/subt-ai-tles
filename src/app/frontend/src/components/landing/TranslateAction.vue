@@ -9,7 +9,9 @@ defineEmits<{ submit: [] }>();
 <template>
   <section class="action">
     <button type="button" class="cta" :disabled="disabled" @click="$emit('submit')">
-      {{ submitting ? "Starting…" : "⚡ Translate Subtitles (LLM) →" }}
+      <AppIcon name="bolt" :size="18" />
+      {{ submitting ? "Starting…" : "Translate subtitles (LLM)" }}
+      <AppIcon v-if="!submitting" name="arrow" :size="18" />
     </button>
     <p v-if="error" class="error" role="alert">{{ error }}</p>
     <div class="estimate mono">
@@ -26,6 +28,10 @@ defineEmits<{ submit: [] }>();
 }
 
 .cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   height: 52px;
   border: 0;
   border-radius: var(--radius-lg);
