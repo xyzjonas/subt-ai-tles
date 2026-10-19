@@ -10,6 +10,7 @@ from app.errors import (
     ConflictError,
     InvalidInputError,
     NotFoundError,
+    QuotaExceededError,
     ServiceError,
     UpstreamError,
 )
@@ -19,6 +20,7 @@ _STATUS_BY_ERROR: dict[type[Exception], int] = {
     NotFoundError: status.HTTP_404_NOT_FOUND,
     ConflictError: status.HTTP_409_CONFLICT,
     InvalidInputError: 422,
+    QuotaExceededError: status.HTTP_429_TOO_MANY_REQUESTS,
     UpstreamError: status.HTTP_502_BAD_GATEWAY,
 }
 

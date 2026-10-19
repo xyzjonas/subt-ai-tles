@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import re
 from loguru import logger
 from copy import deepcopy
+from dataclasses import replace
 from datetime import timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -13,13 +15,48 @@ from subtaitles.srt import strip_newlines
 from . import TranslationResponse
 
 from .exceptions import FailedToTranslateError
-from .models import Segment, TranslationRequest, TitleMetadata
+from .models import Segment, SummaryStatus, TranslationRequest, TitleMetadata
 from .providers import Engine, TranslateProtocol, get_translator
 from .srt import reapply_whole_line_markup, strip_srt_markup
 
 if TYPE_CHECKING:
     from .language import Lang
-    from .providers.protocol import Progress
+    from .providers.protocol import Progress, SummaryStoreProtocol
+
+
+def _media_key(kind: str, title: str, suffix: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")
+    return f"{kind}:{slug}:{suffix}"
+
+
+async def add_summary(
+    request: TranslationRequest,
+    translator: TranslateProtocol,
+    store: SummaryStoreProtocol | None,
+) -> tuple[TranslationRequest, SummaryStatus]:
+    """Attach the story brief of a recognized title, summarizing (and storing) it on a miss.
+
+    Best effort: without a key (media not recognized) or on failure the request is unchanged.
+    """
+    key = request.metadata.key if request.metadata else None
+    if not key:
+        return request, SummaryStatus.SKIPPED
+
+    try:
+        summary = await store.get(key) if store else None
+        if summary:
+            logger.debug(f"Story brief for {key} found in store.")
+            status = SummaryStatus.STORED
+        else:
+            logger.debug(f"Summarizing {key}.")
+            summary = await translator.summarize(request)
+            status = SummaryStatus.GENERATED
+            if store:
+                await store.put(key, summary)
+    except Exception as e:
+        logger.warning(f"Can't summarize {key}: {e}")
+        return request, SummaryStatus.FAILED
+    return replace(request, summary=summary), status
 
 
 async def get_translation_request(
@@ -41,13 +78,23 @@ async def get_translation_request(
                 f"Recognized as {fetched_meta.type}: {fetched_meta.series_title}, adding to context."
             )
             meta = TitleMetadata(
-                title=fetched_meta.series_title, description=fetched_meta.episode_summary
+                title=fetched_meta.series_title,
+                description=fetched_meta.episode_summary,
+                key=_media_key(
+                    "tv",
+                    fetched_meta.series_title,
+                    f"s{fetched_meta.season_id:02d}e{fetched_meta.episode_id:02d}",
+                ),
             )
         else:
             logger.debug(
                 f"Recognized as {fetched_meta.type}: {fetched_meta.title}, adding to context."
             )
-            meta = TitleMetadata(title=fetched_meta.title, description=fetched_meta.summary)
+            meta = TitleMetadata(
+                title=fetched_meta.title,
+                description=fetched_meta.summary,
+                key=_media_key("movie", fetched_meta.title, str(fetched_meta.year)),
+            )
     except Exception as e:
         logger.warning(f"Can't fetch media metadata: {e}")
 
@@ -103,6 +150,7 @@ async def translate_srt(
     target: Lang,
     translator: Engine | TranslateProtocol,
     progress: Progress | None = None,
+    summaries: SummaryStoreProtocol | None = None,
 ) -> SubRipFile:
     """Translate subtitle file (.srt) a parsed SubRipFile object.
 
@@ -111,9 +159,11 @@ async def translate_srt(
     :param target: target language
     :param translator: translation engine or translator instance
     :param progress: progress object
+    :param summaries: optional store to persist story briefs of recognized titles
     :return: translated subtitle file as SubRipFile object
     """
     translator, request = await get_translation_request(srt, source, target, translator)
+    request, _ = await add_summary(request, translator, summaries)
 
     response = await translator.translate(request, progress)
 
@@ -127,6 +177,7 @@ async def translate_srt_file(  # noqa: PLR0913
     translator: Engine | TranslateProtocol,
     new_path: Path | str | None = None,
     progress: Progress | None = None,
+    summaries: SummaryStoreProtocol | None = None,
 ) -> Path:
     """Translate subtitle file (.srt) given a path on the local filesystem.
 
@@ -136,6 +187,7 @@ async def translate_srt_file(  # noqa: PLR0913
     :param translator: translation engine type or translator instance
     :param new_path: arbitrary path to the new file with translated subtitles
     :param progress: progress object
+    :param summaries: optional store to persist story briefs of recognized titles
     :return: path to the new file with translated subtitles
     """
     try:
@@ -147,7 +199,7 @@ async def translate_srt_file(  # noqa: PLR0913
             new_path = new_path / f"{filename}.{target.value}.{ext}"
         srt = pysrt.open(path.absolute())
 
-        result = await translate_srt(srt, source, target, translator, progress)
+        result = await translate_srt(srt, source, target, translator, progress, summaries)
         with new_path.open("w") as file:
             result.write_into(file)
 

@@ -12,6 +12,10 @@ import AppIcon from "../ui/AppIcon.vue";
       <AppIcon name="list" />
       My requests
     </RouterLink>
+    <RouterLink to="/dashboard" class="tab">
+      <AppIcon name="user" />
+      Dashboard
+    </RouterLink>
   </nav>
 </template>
 
@@ -22,7 +26,7 @@ import AppIcon from "../ui/AppIcon.vue";
   z-index: 10;
   height: var(--dock-height);
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   background: var(--surface);
   border-top: 1px solid var(--border);
 }

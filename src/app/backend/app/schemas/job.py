@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import Field
 
-from app.models.job import JobStatus
+from app.models.job import JobStage, JobStatus
 from app.schemas.base import CamelModel
 
 
@@ -15,7 +15,8 @@ class JobOut(CamelModel):
     created_at: datetime
     status: JobStatus
     processed_cues: int | None = None
-    step: str | None = None
+    stage: JobStage | None = None
+    summary_status: str | None = None
     model: str | None = None
     confidence: float | None = None
     error: str | None = None

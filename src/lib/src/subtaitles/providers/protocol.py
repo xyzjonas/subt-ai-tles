@@ -17,3 +17,13 @@ class TranslateProtocol(Protocol):
         request: TranslationRequest,
         progress: Progress | None = None,
     ) -> TranslationResponse: ...
+
+    async def summarize(self, request: TranslationRequest) -> str: ...
+
+
+class SummaryStoreProtocol(Protocol):
+    """Persistence for story briefs, keyed by ``TitleMetadata.key``."""
+
+    async def get(self, key: str) -> str | None: ...
+
+    async def put(self, key: str, summary: str) -> None: ...

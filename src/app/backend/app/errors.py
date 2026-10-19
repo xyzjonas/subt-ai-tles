@@ -14,5 +14,9 @@ class InvalidInputError(ServiceError):
     pass
 
 
+class QuotaExceededError(ServiceError):
+    pass
+
+
 class UpstreamError(ServiceError):
     pass

@@ -5,13 +5,13 @@ import StatusBadge from "../ui/StatusBadge.vue";
 
 defineProps<{ steps: { title: string; detail: string; state: MilestoneState }[] }>();
 
-const LABEL: Record<MilestoneState, string> = { done: "Done", active: "Processing", pending: "Pending" };
+const LABEL: Record<MilestoneState, string> = { done: "Done", active: "Processing", pending: "Pending", skipped: "Skipped" };
 </script>
 
 <template>
   <section class="card" aria-labelledby="milestones-title">
     <header class="head">
-      <h2 id="milestones-title">Pipeline Milestones</h2>
+      <h2 id="milestones-title">Progress</h2>
       <StatusBadge>{{ steps.length }} Steps</StatusBadge>
     </header>
 
@@ -96,7 +96,8 @@ strong {
   font-weight: 600;
 }
 
-.pending strong {
+.pending strong,
+.skipped strong {
   color: var(--text-muted);
 }
 

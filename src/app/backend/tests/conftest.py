@@ -15,13 +15,22 @@ os.environ["ADMIN_PASSWORD"] = "admin-password"
 from alembic import command  # noqa: E402
 from alembic.config import Config  # noqa: E402
 from app.main import app  # noqa: E402
-from app.services import jobs, translation  # noqa: E402
+from app.services import app_settings, jobs, translation  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
-from subtaitles import TranslatedSegment, TranslationResponse, TranslationVariant  # noqa: E402
+from subtaitles import (  # noqa: E402
+    RetranslationResponse,
+    TranslatedSegment,
+    TranslationResponse,
+    TranslationVariant,
+    Usage,
+)
 
 ALEMBIC_CFG = Config(str(Path(__file__).parents[1] / "alembic.ini"))
 # The test schema comes from the real migrations.
 command.upgrade(ALEMBIC_CFG, "head")
+
+# 400 prompt + 100 completion tokens per story brief: 0.4 + 0.4 = 0.8 credits
+SUMMARY_USAGE = Usage(400, 100)
 
 ADMIN = ("admin", "admin-password")
 
@@ -54,7 +63,18 @@ def make_user(client: TestClient):
 class StubTranslator:
     """Stands in for OpenAiTranslator: no network, deterministic output."""
 
-    model = "stub-model"
+    model = "gpt-4.1-nano"
+    temperature: float | None = 0.0
+
+    def __init__(self) -> None:
+        self.usage = Usage()
+        self.fail_after_usage = False
+        self.summarized: list[str | None] = []
+
+    async def summarize(self, request):
+        self.summarized.append(request.metadata.key if request.metadata else None)
+        self.usage += SUMMARY_USAGE
+        return f"brief of {request.metadata.title}"
 
     async def translate(self, request, progress=None):
         segments = []
@@ -64,12 +84,26 @@ class StubTranslator:
             )
             if progress:
                 progress.current += 1
-        return TranslationResponse(tuple(segments), request.source, request.target)
+        # 1,000 prompt + 500 completion tokens per cue: 1 + 2 = 3 credits at the seeded rates
+        used = Usage(1000 * len(segments), 500 * len(segments))
+        self.usage += used
+        if self.fail_after_usage:
+            msg = "boom"
+            raise RuntimeError(msg)
+        return TranslationResponse(
+            tuple(segments), request.source, request.target, usage=used, model=self.model
+        )
 
     async def retranslate(self, text, *, prompt=None, **_kwargs):
+        used = Usage(1000, 500)
+        self.usage += used
         if prompt:
-            return [TranslationVariant("Custom", f"[custom] {text}")]
-        return [TranslationVariant(label, f"[{label}] {text}") for label in ("Literal", "Shorter")]
+            variants = [TranslationVariant("Custom", f"[custom] {text}")]
+        else:
+            variants = [
+                TranslationVariant(label, f"[{label}] {text}") for label in ("Literal", "Shorter")
+            ]
+        return RetranslationResponse(variants, used, self.model)
 
 
 class FakeQueue:
@@ -93,7 +127,15 @@ class FakeQueue:
 @pytest.fixture(autouse=True)
 def translator(monkeypatch: pytest.MonkeyPatch) -> StubTranslator:
     stub = StubTranslator()
-    monkeypatch.setattr(translation, "make_translator", lambda: stub)
+
+    def build(config):
+        # what the real make_translator takes from the app settings
+        stub.usage = Usage()  # the real translator is fresh per use
+        stub.model = config.model
+        stub.temperature = app_settings.effective_temperature(config)
+        return stub
+
+    monkeypatch.setattr(translation, "make_translator", build)
 
     async def no_lookup(_path: str) -> None:
         msg = "offline"

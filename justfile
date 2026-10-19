@@ -31,9 +31,9 @@ format:
 upgrade:
   uv lock --upgrade
 
-publish:
+publish STEP="patch":
   @rm -rf ./dist
-  uv version --package subt-ai-tles --bump patch
+  uv version --package subt-ai-tles --bump {{STEP}}
   uv build --package subt-ai-tles
   uv publish dist/*
 

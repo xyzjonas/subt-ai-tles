@@ -2,6 +2,7 @@
 import { computed, ref } from "vue";
 import { downloadJob } from "../../api/jobs";
 import type { Job } from "../../api/types";
+import { stageLabel } from "../../utils/stage";
 import { downloadBlob, formatWhen, timeAgo, translatedFileName } from "../../utils/srt";
 import AppIcon from "../ui/AppIcon.vue";
 import StatusBadge from "../ui/StatusBadge.vue";
@@ -43,7 +44,7 @@ async function download() {
         Processing {{ percent }}% • {{ job.processedCues }} / {{ job.cueCount }} lines
       </StatusBadge>
       <progress class="bar" :value="percent" max="100" :aria-label="`${percent}% translated`" />
-      <p class="step mono"><AppIcon name="sync" :size="12" /> {{ job.step }}</p>
+      <p class="step mono"><AppIcon name="sync" :size="12" /> {{ stageLabel(job) }}</p>
     </template>
 
     <template v-else>

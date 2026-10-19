@@ -47,6 +47,8 @@ def create(db: Session, data: UserCreate) -> User:
         password_hash=hash_password(data.password),
         is_admin=data.is_admin,
     )
+    if data.monthly_quota is not None:
+        user.monthly_quota = data.monthly_quota
     db.add(user)
     db.flush()
     return user
@@ -61,6 +63,8 @@ def update(db: Session, user_id: int, data: UserUpdate) -> User:
         user.is_admin = data.is_admin
     if data.is_active is not None:
         user.is_active = data.is_active
+    if data.monthly_quota is not None:
+        user.monthly_quota = data.monthly_quota
     if was_active_admin and not _is_active_admin(user) and _active_admin_count(db) <= 1:
         db.rollback()
         msg = "Cannot demote or deactivate the last admin"

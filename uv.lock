@@ -2304,7 +2304,7 @@ wheels = [
 
 [[package]]
 name = "subt-ai-tles"
-version = "0.0.12"
+version = "0.0.13"
 source = { editable = "src/lib" }
 dependencies = [
     { name = "deepl" },

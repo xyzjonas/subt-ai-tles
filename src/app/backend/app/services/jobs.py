@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.errors import ConflictError, InvalidInputError, NotFoundError
 from app.models import Cue, Job, JobStatus, User
-from app.services import languages
+from app.services import app_settings, languages, usage
 from app.worker import translate_job
 
 logger = logging.getLogger(__name__)
@@ -72,6 +72,8 @@ def create(  # noqa: PLR0913
         if languages.get(db, code) is None:
             msg = f"Unknown language: {code}"
             raise InvalidInputError(msg)
+    usage.rate_for(db, app_settings.get(db).model)
+    usage.ensure_within_quota(db, user)
     subtitles = _parse_srt(PurePath(file_name).name, content)
     job = Job(
         owner_id=user.id,
@@ -79,7 +81,6 @@ def create(  # noqa: PLR0913
         source_lang=source_lang,
         target_lang=target_lang,
         cue_count=len(subtitles),
-        step="Queued",
     )
     job.cues = [
         Cue(index=i, start=_ms(sub.start), end=_ms(sub.end), source=sub.content)
@@ -98,7 +99,6 @@ def enqueue(db: Session, job: Job) -> None:
         logger.exception("Could not queue job %s", job.id)
         job.status = JobStatus.FAILED
         job.error = "The translation could not be queued"
-        job.step = None
         db.commit()
 
 

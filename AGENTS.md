@@ -1,6 +1,8 @@
 # How-to
 
+## IMPORTANT!!!
 - use literal relative paths, no shell variables or command substitution in file commands
+- don't use cd to parent paths, stay within the repository folder!
 
 ## UI/UX Design/implementation
 

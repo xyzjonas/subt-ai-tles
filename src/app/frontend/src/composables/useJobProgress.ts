@@ -1,12 +1,20 @@
 import { computed, onScopeDispose, ref, watch, type Ref } from "vue";
 import { getCue } from "../api/cues";
 import { cancelJob, getJob } from "../api/jobs";
-import type { Cue, Job } from "../api/types";
+import type { Cue, Job, JobStage, SummaryStatus } from "../api/types";
 
 const POLL_MS = 1500;
 const CHUNK_SIZE = 30;
 
-export type MilestoneState = "done" | "active" | "pending";
+export type MilestoneState = "done" | "active" | "pending" | "skipped";
+
+const STAGES: JobStage[] = ["recognizing", "summarizing", "translating"];
+const BRIEF_DETAIL: Record<SummaryStatus, string> = {
+  generated: "Story brief written",
+  stored: "Reused saved story brief",
+  skipped: "Title not recognized, no brief needed",
+  failed: "Couldn't write a brief, continuing without",
+};
 
 /** Polls a processing job and derives gauge, milestone and live-cue state from it. */
 export function useJobProgress(jobId: Ref<string>, onComplete: () => void) {
@@ -25,17 +33,29 @@ export function useJobProgress(jobId: Ref<string>, onComplete: () => void) {
   const chunkPercent = computed(() => Math.min(100, Math.round(((processed.value - chunkStart.value + 1) / CHUNK_SIZE) * 100)));
 
   const milestones = computed<{ title: string; detail: string; state: MilestoneState }[]>(() => {
-    const started = processed.value > 0;
     const finished = job.value?.status === "ready";
+    const stage = job.value?.stage ?? "recognizing";
+    const at = (target: JobStage) => (finished ? "done" : stage === target ? "active" : STAGES.indexOf(stage) > STAGES.indexOf(target) ? "done" : "pending") satisfies MilestoneState;
+    const brief = job.value?.summaryStatus;
+    const briefState = at("summarizing");
+
     return [
-      { title: "Parsing SRT timecodes & syntax", detail: `Validated ${total.value} timecodes`, state: "done" },
-      { title: "Contextual idiom & dialogue analysis", detail: "Character mapping confirmed", state: started ? "done" : "active" },
       {
-        title: "Generating localized translation",
-        detail: finished ? `Translated all ${total.value} lines` : started ? `Translating lines ${chunkStart.value}-${chunkEnd.value} of ${total.value}…` : "Waiting for analysis",
-        state: finished ? "done" : started ? "active" : "pending",
+        title: "Uploading & recognizing",
+        detail: at("recognizing") === "active" ? "Reading the file and looking up the title…" : brief === "skipped" ? "Title not recognized" : "Title recognized",
+        state: at("recognizing"),
       },
-      { title: "Timecode calibration & SRT compilation", detail: finished ? "Compiled" : "Pending target completion", state: finished ? "done" : "pending" },
+      {
+        title: "Summarizing",
+        detail: briefState === "pending" ? "Waiting for the title lookup" : briefState === "active" ? "Reading the whole script for context…" : BRIEF_DETAIL[brief ?? "skipped"],
+        state: briefState === "done" && (brief === "skipped" || brief === "failed") ? "skipped" : briefState,
+      },
+      {
+        title: "Translating cues",
+        detail: finished ? `Translated all ${total.value} lines` : stage === "translating" ? `Translating lines ${chunkStart.value}-${chunkEnd.value} of ${total.value}…` : "Waiting for the story summary",
+        state: at("translating"),
+      },
+      { title: "Done", detail: finished ? "Ready to review" : "Pending translation", state: finished ? "done" : "pending" },
     ];
   });
 

@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.errors import NotFoundError
 from app.models import Cue, User
 from app.schemas import CueUpdate, CueVariant
-from app.services import jobs, translation
+from app.services import jobs, translation, usage
 
 
 def list_for_job(db: Session, user: User, job_id: str) -> list[Cue]:
@@ -32,4 +32,5 @@ def retranslate(
     db: Session, user: User, job_id: str, index: int, prompt: str | None
 ) -> list[CueVariant]:
     cue = get(db, user, job_id, index)
+    usage.ensure_within_quota(db, user)
     return translation.retranslate_cue(db, cue, prompt)

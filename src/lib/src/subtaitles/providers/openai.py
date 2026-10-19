@@ -13,7 +13,13 @@ from pydantic import BaseModel, ValidationError
 from subtaitles.cache import CacheProtocol, disk_cache
 from subtaitles.environment import env
 from subtaitles.imports import batched
-from subtaitles.models import TranslatedSegment, TranslationResponse, TranslationVariant
+from subtaitles.models import (
+    RetranslationResponse,
+    TranslatedSegment,
+    TranslationResponse,
+    TranslationVariant,
+    Usage,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -39,6 +45,29 @@ class OpenAiResponse(BaseModel):
     @property
     def mapping(self) -> dict[int, str]:
         return {t.id: t.text for t in self.translations}
+
+
+class OpenAiVariant(BaseModel):
+    label: str
+    text: str
+
+
+class OpenAiVariants(BaseModel):
+    variants: list[OpenAiVariant]
+
+
+class OpenAiSummary(BaseModel):
+    summary: str
+
+
+class UsageMeter:
+    """Sums the usage of the concurrent calls made within one ``translate()``."""
+
+    def __init__(self) -> None:
+        self.usage = Usage()
+
+    def add(self, usage: Usage) -> None:
+        self.usage += usage
 
 
 _RETRY_RE = re.compile(r"try again in\s+(?:(\d+(?:\.\d+)?)m(?!s))?\s*(?:(\d+(?:\.\d+)?)s)?\s*(?:(\d+(?:\.\d+)?)ms)?", re.I)
@@ -77,7 +106,9 @@ class OpenAiTranslator:
     SYSTEM = """You are a professional subtitle translator. Translate from {lang_from} to {lang_to}.
 
     Input is a JSON object with "items" (to translate) and optional "context_before" /
-    "context_after" (surrounding lines, for understanding only, do NOT translate them).
+    "context_after" (surrounding lines, for understanding only, do NOT translate them) and an
+    optional "story_brief" (who is who, plot, settings; background only, never translate or
+    output it). Use the brief to pick correct gender, formality/address forms and terminology.
 
     Rules:
     - Return exactly one translation per item, using the same "id".
@@ -88,32 +119,21 @@ class OpenAiTranslator:
     - Keep meaning, tone and register. Use natural idioms.
     """
 
-    RESPONSE_FORMAT = {
-        "type": "json_schema",
-        "json_schema": {
-            "name": "subtitle_translations",
-            "strict": True,
-            "schema": {
-                "type": "object",
-                "properties": {
-                    "translations": {
-                        "type": "array",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "id": {"type": "integer"},
-                                "text": {"type": "string"},
-                            },
-                            "required": ["id", "text"],
-                            "additionalProperties": False,
-                        },
-                    }
-                },
-                "required": ["translations"],
-                "additionalProperties": False,
-            },
-        },
-    }
+    SUMMARY_SYSTEM = """You are preparing a story brief for a subtitle translator. Input is the
+    complete subtitle script of one {title} in {lang_from}, one "index|text" line per cue. Write the
+    brief in English. It is attached to every translation request, so it must be as concise and
+    information-dense as possible: telegraphic notes, no filler, at most {max_words} words.
+
+    Cover only what helps translate the cues correctly:
+    - Characters: name, gender, role, relationships, and who addresses whom formally or informally.
+    - Premise and storyline in a few beats.
+    - Settings, time period, genre and tone/register.
+    - Recurring names, terms and jargon that must be rendered consistently.
+    Do not translate the script and do not quote it.
+    """
+
+    SUMMARY_MAX_WORDS = 300
+    SUMMARY_MAX_CHARS = 400_000  # ~100k tokens, longer scripts are truncated
 
     RETRANSLATE_SYSTEM = """You are a professional subtitle translator. Translate the subtitle
     "text" from {lang_from} to {lang_to}. Input is a JSON object with the subtitle "text", the
@@ -129,40 +149,14 @@ class OpenAiTranslator:
         "Shorter": "As concise as possible while keeping the meaning, for fast reading.",
     }
 
-    VARIANTS_FORMAT = {  # noqa: RUF012
-        "type": "json_schema",
-        "json_schema": {
-            "name": "subtitle_variants",
-            "strict": True,
-            "schema": {
-                "type": "object",
-                "properties": {
-                    "variants": {
-                        "type": "array",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "label": {"type": "string"},
-                                "text": {"type": "string"},
-                            },
-                            "required": ["label", "text"],
-                            "additionalProperties": False,
-                        },
-                    }
-                },
-                "required": ["variants"],
-                "additionalProperties": False,
-            },
-        },
-    }
-
     def __init__(
         self,
         model: str | None = None,
         openapi_key: str | None = None,
         openapi_org: str | None = None,
-        batch_size: int = 30,
+        batch_size: int = 120,
         cache: CacheProtocol = None,
+        temperature: float | None = 0,
     ) -> None:
         self.model = model or env.OPENAI_MODEL(strict=True)
         self.client = AsyncOpenAI(
@@ -170,7 +164,14 @@ class OpenAiTranslator:
             organization=openapi_org or env.OPENAI_ORG_ID(),
         )
         self.batch_size = batch_size
-        self.cache = cache or disk_cache
+        # None leaves it to the model (some models only accept their default)
+        self.temperature = temperature
+        self.cache = disk_cache if cache is None else cache
+        # cumulative over the translator's lifetime, also covers calls that ended in an error
+        self.usage = Usage()
+
+    def _sampling(self) -> dict:
+        return {} if self.temperature is None else {"temperature": self.temperature}
 
     def get_completion(
         self,
@@ -184,12 +185,14 @@ class OpenAiTranslator:
             "items": [{"id": s.index, "text": s.text} for s in segments],
             "context_after": "",
         }
+        if request.summary:
+            payload["story_brief"] = request.summary
 
         return {
             "model": self.model,
-            "temperature": 0,
-            "response_format": self.RESPONSE_FORMAT,
-            "messages": [
+            **self._sampling(),
+            "text_format": OpenAiResponse,
+            "input": [
                 {
                     "role": "system",
                     "content": self.SYSTEM.format(
@@ -201,9 +204,23 @@ class OpenAiTranslator:
             ],
         }
 
-    async def __call(self, completion: dict, retries_left: int) -> OpenAiResponse:
+    def _track(self, response: object, meter: UsageMeter | None = None) -> Usage:
+        """Add the tokens reported by a completion to the translator (and call) totals."""
+        raw = getattr(response, "usage", None)
+        usage = Usage(
+            prompt_tokens=getattr(raw, "input_tokens", 0) or 0,
+            completion_tokens=getattr(raw, "output_tokens", 0) or 0,
+        )
+        self.usage += usage
+        if meter:
+            meter.add(usage)
+        return usage
+
+    async def __call(
+        self, completion: dict, retries_left: int, meter: UsageMeter | None = None
+    ) -> OpenAiResponse:
         try:
-            response = await self.client.chat.completions.create(**completion)
+            response = await self.client.responses.parse(**completion)
         except RateLimitError as e:
             if retries_left <= 0:
                 logger.exception(e)
@@ -213,17 +230,23 @@ class OpenAiTranslator:
             delay = delay * random_coefficient * (API_RETRIES + 1 - retries_left)
             logger.warning(f"Rate limited, retrying in {delay:.3f}s ({retries_left} retries left)")
             await asyncio.sleep(delay)
-            return await self.__call(completion, retries_left=retries_left - 1)
-
-        try:
-            data = json.loads(response.choices[0].message.content)
-            return OpenAiResponse(**data)
-        except (ValidationError, json.JSONDecodeError, KeyError, TypeError, IndexError) as e:
+            return await self.__call(completion, retries_left=retries_left - 1, meter=meter)
+        except ValidationError as e:
             logger.error(f"Malformed response: {e}")
+            if retries_left <= 0:
+                raise
+            await asyncio.sleep(0.1)
+            return await self.__call(completion, retries_left=retries_left - 1, meter=meter)
+
+        self._track(response, meter)
+        if response.output_parsed is None:
+            logger.error("Malformed response: nothing parsed (refusal or incomplete output)")
             if retries_left > 0:
                 await asyncio.sleep(0.1)
-                return await self.__call(completion, retries_left=retries_left - 1)
-            raise
+                return await self.__call(completion, retries_left=retries_left - 1, meter=meter)
+            msg = "No parsed output returned"
+            raise ValueError(msg)
+        return response.output_parsed
 
     async def process_batch(  # noqa: PLR0913
         self,
@@ -233,13 +256,14 @@ class OpenAiTranslator:
         retries_left: int = 10,
         batch_id: int = 0,
         progress: Progress | None = None,
+        meter: UsageMeter | None = None,
     ) -> list[TranslatedSegment]:
         logger.debug(f"Processing batch {batch_id} retries-left={retries_left}")
         if retries_left < MIN_RETRIES_TO_LOG:
             logger.debug(f"Processing batch {batch_id} retries-left={retries_left}")
 
         completion = self.get_completion(segments, request)
-        response = await self.__call(completion, retries_left=API_RETRIES)
+        response = await self.__call(completion, retries_left=API_RETRIES, meter=meter)
 
         results, missing = [], []
         for seg in segments:
@@ -267,6 +291,7 @@ class OpenAiTranslator:
                 retries_left=retries_left - 1,
                 batch_id=batch_id,
                 progress=progress,
+                meter=meter,
             )
 
         logger.debug(f"[OK] batch {batch_id} completed, retries-left={retries_left}")
@@ -285,7 +310,7 @@ class OpenAiTranslator:
         prompt: str | None = None,
         context_before: Sequence[str] = (),
         context_after: Sequence[str] = (),
-    ) -> list[TranslationVariant]:
+    ) -> RetranslationResponse:
         """Alternative translations of a single subtitle.
 
         With a ``prompt`` a single "Custom" variant follows that instruction, otherwise one
@@ -298,10 +323,11 @@ class OpenAiTranslator:
             "context_after": list(context_after),
             "variants": [{"label": label, "instruction": hint} for label, hint in styles.items()],
         }
-        response = await self.client.chat.completions.create(
+        response = await self.client.responses.parse(
             model=self.model,
-            response_format=self.VARIANTS_FORMAT,
-            messages=[
+            **self._sampling(),
+            text_format=OpenAiVariants,
+            input=[
                 {
                     "role": "system",
                     "content": self.RETRANSLATE_SYSTEM.format(
@@ -311,12 +337,39 @@ class OpenAiTranslator:
                 {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
             ],
         )
-        data = json.loads(response.choices[0].message.content)
-        variants = [TranslationVariant(v["label"], v["text"]) for v in data["variants"]]
+        usage = self._track(response)
+        parsed = response.output_parsed
+        variants = [TranslationVariant(v.label, v.text) for v in parsed.variants] if parsed else []
         if not variants:
             msg = "No variants returned"
             raise ValueError(msg)
-        return variants
+        return RetranslationResponse(variants=variants, usage=usage, model=self.model)
+
+    async def summarize(self, request: TranslationRequest) -> str:
+        """Concise English story brief of the whole script, used as context for every batch."""
+        script = "\n".join(f"{s.index}|{s.text}" for s in request.segments)
+        completion = {
+            "model": self.model,
+            **self._sampling(),
+            "text_format": OpenAiSummary,
+            "input": [
+                {
+                    "role": "system",
+                    "content": self.SUMMARY_SYSTEM.format(
+                        title=request.metadata.title if request.metadata else "title",
+                        lang_from=request.source.language.english,
+                        max_words=self.SUMMARY_MAX_WORDS,
+                    ),
+                },
+                {"role": "user", "content": script[: self.SUMMARY_MAX_CHARS]},
+            ],
+        }
+        response = await self.__call(completion, retries_left=API_RETRIES)
+        summary = response.summary.strip()
+        if not summary:
+            msg = "Empty summary returned"
+            raise ValueError(msg)
+        return summary
 
     async def translate(
         self,
@@ -345,8 +398,11 @@ class OpenAiTranslator:
             else:
                 uncached.append(seg)
 
+        meter = UsageMeter()
         tasks = [
-            self.process_batch(list(batch), request=request, batch_id=i, progress=progress)
+            self.process_batch(
+                list(batch), request=request, batch_id=i, progress=progress, meter=meter
+            )
             for i, batch in enumerate(batched(uncached, self.batch_size, strict=False))
         ]
 
@@ -356,4 +412,6 @@ class OpenAiTranslator:
                 all_results[seg.index] = seg
 
         ordered = tuple(all_results[seg.index] for seg in request.segments)
-        return TranslationResponse(segments=ordered, source=source, target=target)
+        return TranslationResponse(
+            segments=ordered, source=source, target=target, usage=meter.usage, model=self.model
+        )

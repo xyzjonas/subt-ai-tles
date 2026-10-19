@@ -19,6 +19,14 @@ class JobStatus(StrEnum):
     FAILED = "failed"
 
 
+class JobStage(StrEnum):
+    """Where a processing job currently is. `recognizing` also covers waiting in the queue."""
+
+    RECOGNIZING = "recognizing"
+    SUMMARIZING = "summarizing"
+    TRANSLATING = "translating"
+
+
 def _now() -> datetime:
     return datetime.now(UTC)
 
@@ -44,7 +52,18 @@ class Job(Base):
         default=JobStatus.PROCESSING,
     )
     processed_cues: Mapped[int] = mapped_column(default=0)
-    step: Mapped[str | None]
+    stage: Mapped[JobStage] = mapped_column(
+        Enum(
+            JobStage,
+            native_enum=False,
+            length=16,
+            values_callable=lambda enum: [member.value for member in enum],
+        ),
+        default=JobStage.RECOGNIZING,
+        server_default=JobStage.RECOGNIZING.value,
+    )
+    # SummaryStatus of the story brief, once known
+    summary_status: Mapped[str | None]
     model: Mapped[str | None]
     confidence: Mapped[float | None]
     error: Mapped[str | None]

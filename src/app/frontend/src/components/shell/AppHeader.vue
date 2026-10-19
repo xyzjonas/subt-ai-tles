@@ -27,6 +27,7 @@ function signOut() {
       <nav class="nav" aria-label="Primary">
         <RouterLink to="/">Translate</RouterLink>
         <RouterLink to="/requests">My requests</RouterLink>
+        <RouterLink to="/dashboard">Dashboard</RouterLink>
       </nav>
       <button
         type="button"

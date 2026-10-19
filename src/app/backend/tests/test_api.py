@@ -3,7 +3,7 @@ from collections.abc import Callable
 
 import pytest
 from app.db import SessionLocal
-from app.models import Job
+from app.models import Job, JobStage
 from app.services import translation
 from fastapi.testclient import TestClient
 
@@ -79,7 +79,7 @@ def test_job_lifecycle(client: TestClient, make_user: Callable, queue: FakeQueue
     done = _finish(client, queue, bob, job["id"])
     assert done["status"] == "ready"
     assert done["processedCues"] == 2
-    assert done["model"] == "stub-model"
+    assert done["model"] == "gpt-4.1-nano"
 
     cues = client.get(f"/api/jobs/{job['id']}/cues", auth=bob).json()
     assert cues[0] == {
@@ -184,21 +184,21 @@ def test_progress_is_persisted_while_running(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(translation, "_POLL_SECONDS", 0.01)
-    seen: list[tuple[int | None, str | None]] = []
+    seen: list[tuple[int | None, JobStage]] = []
 
     async def slow(request, progress=None):
         progress.current = 1
         await asyncio.sleep(0.1)
         with SessionLocal() as db:
             job = db.get(Job, queue.job_ids[0])
-            seen.append((job.processed_cues, job.step))
+            seen.append((job.processed_cues, job.stage))
         return await StubTranslator().translate(request)
 
     translator.translate = slow  # type: ignore[method-assign]
     kim = make_user("kim")
     job = _upload(client, kim)
     done = _finish(client, queue, kim, job["id"])
-    assert seen == [(1, "Translating cues 1/2")]
+    assert seen == [(1, JobStage.TRANSLATING)]
     assert done["status"] == "ready"
     assert done["processedCues"] == 2
 

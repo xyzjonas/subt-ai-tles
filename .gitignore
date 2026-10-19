@@ -165,3 +165,5 @@ src/app/frontend/dist/
 
 # App database
 *.db
+subtaitles.db-wal
+subtaitles.db-shm
