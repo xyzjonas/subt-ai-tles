@@ -41,6 +41,10 @@ dev:
   uv run --package subt-ai-tles-app uvicorn app.main:app --reload
 
 [working-directory: 'src/app/frontend']
+ui:
+    npm run dev
+
+[working-directory: 'src/app/frontend']
 app-frontend:
   npm run dev
 

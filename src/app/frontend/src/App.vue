@@ -1,17 +1,36 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { useRoute } from "vue-router";
+import AppHeader from "./components/shell/AppHeader.vue";
+import BottomDock from "./components/shell/BottomDock.vue";
 
-const message = ref("loading...");
-
-onMounted(async () => {
-  const res = await fetch("/api/hello");
-  message.value = (await res.json()).message;
-});
+const route = useRoute();
 </script>
 
 <template>
-  <main>
-    <h1>subt-ai-tles</h1>
-    <p>{{ message }}</p>
-  </main>
+  <div class="shell">
+    <AppHeader :subtitle="String(route.meta.subtitle ?? '')" />
+    <main class="content">
+      <RouterView />
+    </main>
+    <BottomDock />
+  </div>
 </template>
+
+<style scoped>
+.shell {
+  min-height: 100dvh;
+}
+
+.content {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: calc(var(--header-height) + 20px) var(--page-padding) calc(var(--dock-height) + 32px);
+}
+
+@media (min-width: 768px) {
+  .content {
+    padding-top: calc(var(--header-height) + 32px);
+    padding-bottom: 48px;
+  }
+}
+</style>
