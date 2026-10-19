@@ -12,6 +12,7 @@ dependencies = [
     "pydantic-settings>=2.0",
     "python-multipart>=0.0.9",
     "srt>=3.5",
+    "celery[redis]>=5.4",
 ]
 
 [dependency-groups]

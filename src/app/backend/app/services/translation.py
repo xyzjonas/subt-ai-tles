@@ -1,24 +1,51 @@
-"""PLACEHOLDER business logic.
+"""Translation business logic: the Celery job body and the inline retranslate.
 
-Everything here fakes the real pipeline (`subtaitles.translate_srt`) behind the interface the
-rest of the app uses. Swapping in the real implementation should only touch this module.
+The heavy lifting is done by `subtaitles`; this module maps jobs/cues to and from it and
+reports progress to the database, which is what the UI polls.
 """
 
 import asyncio
+import contextlib
 import logging
+from functools import cache
 
+import diskcache  # type: ignore[import-untyped]
+from openai import AuthenticationError, RateLimitError
+from pysrt import SubRipFile, SubRipItem, SubRipTime  # type: ignore[import-untyped]
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from subtaitles import (  # type: ignore[import-untyped]
+    Lang,
+    OpenAiTranslator,
+    ProgressData,
+    translate_srt,
+)
 
+from app.config import settings
 from app.db import SessionLocal
+from app.errors import UpstreamError
 from app.models import Cue, Job, JobStatus
 from app.schemas import CueVariant, JobEstimate
 
 logger = logging.getLogger(__name__)
 
-_COMMIT_EVERY = 10
-_CUE_DELAY_SECONDS = 0.02
-_tasks: set[asyncio.Task[None]] = set()
+_POLL_SECONDS = 0.5
+_CONTEXT_CUES = 2
+
+
+@cache
+def _cache() -> diskcache.Cache | None:
+    return diskcache.Cache(settings.srt_cache_dir) if settings.srt_cache_dir else None
+
+
+def make_translator() -> OpenAiTranslator:
+    """Build a fresh translator per use: its HTTP client is bound to the running event loop."""
+    return OpenAiTranslator(
+        model=settings.openai_model,
+        openapi_key=settings.openai_api_key,
+        openapi_org=settings.openai_org_id,
+        cache=_cache(),
+    )
 
 
 def estimate(cue_count: int) -> JobEstimate:
@@ -26,69 +53,129 @@ def estimate(cue_count: int) -> JobEstimate:
 
 
 def detect_language(content: bytes) -> str:  # noqa: ARG001
+    """Return the detected language. PLACEHOLDER: always English."""
     return "en"
 
 
-def retranslate_cue(cue: Cue, prompt: str | None) -> list[CueVariant]:
-    if prompt:
-        return [CueVariant(label="Custom", text=f"[custom] {cue.source}")]
-    return [
-        CueVariant(label="Literal", text=f"[literal] {cue.source}"),
-        CueVariant(label="Punchy / Action", text=f"[punchy] {cue.source}"),
-        CueVariant(label="Shorter", text=f"[shorter] {cue.source}"),
-    ]
+def retranslate_cue(db: Session, cue: Cue, prompt: str | None) -> list[CueVariant]:
+    job = db.get(Job, cue.job_id)
+    if job is None:
+        msg = "Job not found"
+        raise UpstreamError(msg)
+    neighbours = list(
+        db.scalars(
+            select(Cue)
+            .where(
+                Cue.job_id == cue.job_id,
+                Cue.index.between(cue.index - _CONTEXT_CUES, cue.index + _CONTEXT_CUES),
+                Cue.index != cue.index,
+            )
+            .order_by(Cue.index)
+        )
+    )
+    try:
+        variants = asyncio.run(
+            make_translator().retranslate(
+                cue.source,
+                source=Lang(job.source_lang),
+                target=Lang(job.target_lang),
+                prompt=prompt,
+                context_before=[c.source for c in neighbours if c.index < cue.index],
+                context_after=[c.source for c in neighbours if c.index > cue.index],
+            )
+        )
+    except Exception as exc:
+        logger.exception("Retranslating cue %s of job %s failed", cue.index, cue.job_id)
+        msg = _user_message(exc)
+        raise UpstreamError(msg) from exc
+    return [CueVariant(label=v.label, text=v.text) for v in variants]
 
 
-def start_job(job_id: str) -> None:
-    """Schedules the fake translation. Must be called from the running event loop."""
-    task = asyncio.create_task(_run(job_id))
-    _tasks.add(task)
-    task.add_done_callback(_tasks.discard)
-
-
-def recover_interrupted(db: Session) -> None:
-    """Jobs still processing at startup lost their worker with the previous process."""
-    for job in db.scalars(select(Job).where(Job.status == JobStatus.PROCESSING)):
-        job.status = JobStatus.FAILED
-        job.error = "Interrupted by server restart"
-        job.step = None
-    db.commit()
+def _user_message(exc: Exception) -> str:
+    """Short, user-facing reason. Details (which may include key fragments) stay in the log."""
+    if isinstance(exc, AuthenticationError):
+        return "The translation service is not configured correctly"
+    if isinstance(exc, RateLimitError):
+        return "The translation service is busy, please try again later"
+    return f"Translation failed ({type(exc).__name__})"
 
 
 def _load(db: Session, job_id: str) -> Job | None:
     return db.get(Job, job_id, populate_existing=True)
 
 
-async def _run(job_id: str) -> None:
+def _report(db: Session, job_id: str, progress: ProgressData) -> bool:
+    """Persist progress. False means the job row is gone, i.e. it was cancelled."""
+    job = _load(db, job_id)
+    if job is None:
+        return False
+    done = min(progress.current, job.cue_count)
+    if done != job.processed_cues:
+        job.processed_cues = done
+        job.step = f"Translating cues {done}/{job.cue_count}"
+        db.commit()
+    return True
+
+
+def _to_srt(job: Job, cues: list[Cue]) -> SubRipFile:
+    items = [
+        SubRipItem(
+            index=cue.index,
+            start=SubRipTime.from_ordinal(cue.start),
+            end=SubRipTime.from_ordinal(cue.end),
+            text=cue.source,
+        )
+        for cue in cues
+    ]
+    # The path is only used by the library to look up the title for extra LLM context.
+    return SubRipFile(items=items, path=job.file_name)
+
+
+async def run_job(job_id: str) -> None:
+    """Translate a job's cues. Idempotent: a job that is gone or finished is skipped."""
     with SessionLocal() as db:
         try:
             job = _load(db, job_id)
-            if job is None:
+            if job is None or job.status != JobStatus.PROCESSING:
                 return
             query = select(Cue).where(Cue.job_id == job_id).order_by(Cue.index)
             cues = list(db.scalars(query))
-            for done, cue in enumerate(cues, start=1):
-                await asyncio.sleep(_CUE_DELAY_SECONDS)
-                cue.target = f"[stub] {cue.source}"
-                if done % _COMMIT_EVERY and done != len(cues):
-                    continue
-                job.processed_cues = done
-                job.step = f"Translating cues {done}/{len(cues)}"
-                db.commit()
-                # The job row disappearing is how cancellation reaches the worker.
-                if _load(db, job_id) is None:
+            translator = make_translator()
+            progress = ProgressData(total=len(cues), current=0)
+            work = asyncio.create_task(
+                translate_srt(
+                    _to_srt(job, cues),
+                    Lang(job.source_lang),
+                    Lang(job.target_lang),
+                    translator,
+                    progress,
+                )
+            )
+            while True:
+                done, _ = await asyncio.wait({work}, timeout=_POLL_SECONDS)
+                if done:
+                    break
+                if not _report(db, job_id, progress):
+                    work.cancel()
+                    with contextlib.suppress(asyncio.CancelledError):
+                        await work
                     return
+            translated = work.result()
+            if _load(db, job_id) is None:
+                return
+            for cue, item in zip(cues, translated, strict=True):
+                cue.target = item.text
+            job.processed_cues = job.cue_count
             job.status = JobStatus.READY
             job.step = None
-            job.model = "placeholder"
-            job.confidence = 99.0
+            job.model = translator.model
             db.commit()
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
+            logger.exception("Translation of job %s failed", job_id)
             db.rollback()
-            logger.warning("Translation of job %s stopped: %s", job_id, exc)
             job = _load(db, job_id)
             if job is not None:
                 job.status = JobStatus.FAILED
-                job.error = str(exc)
+                job.error = _user_message(exc)
                 job.step = None
                 db.commit()

@@ -18,6 +18,7 @@ class JobOut(CamelModel):
     step: str | None = None
     model: str | None = None
     confidence: float | None = None
+    error: str | None = None
 
 
 class EstimateRequest(CamelModel):

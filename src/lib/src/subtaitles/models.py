@@ -31,6 +31,12 @@ class TitleMetadata:
     description: str
 
 
+@dataclass(frozen=True, slots=True)
+class TranslationVariant:
+    label: str
+    text: str
+
+
 @dataclass(frozen=True)
 class TranslationRequest:
     segments: Sequence[Segment]

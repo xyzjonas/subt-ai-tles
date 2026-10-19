@@ -32,4 +32,4 @@ def retranslate(
     db: Session, user: User, job_id: str, index: int, prompt: str | None
 ) -> list[CueVariant]:
     cue = get(db, user, job_id, index)
-    return translation.retranslate_cue(cue, prompt)
+    return translation.retranslate_cue(db, cue, prompt)

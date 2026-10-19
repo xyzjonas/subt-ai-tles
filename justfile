@@ -58,3 +58,14 @@ app-frontend:
 
 docker-build:
   docker build -t subt-ai-tles-app .
+
+# Run web (nginx + API), worker and redis.
+up:
+  docker compose up --build
+
+# Run the Celery worker locally (needs redis: `docker compose up redis`).
+worker:
+  uv run --package subt-ai-tles-app celery -A app.worker.celery_app worker --loglevel=INFO
+
+redis:
+    docker run -it --rm -p 6379:6379 redis:7-alpine

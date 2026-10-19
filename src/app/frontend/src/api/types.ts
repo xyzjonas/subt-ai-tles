@@ -23,6 +23,8 @@ export interface Job {
   model?: string;
   /** Model confidence 0-100 (completed jobs). */
   confidence?: number;
+  /** Why the job failed (failed jobs). */
+  error?: string;
 }
 
 export interface JobEstimate {

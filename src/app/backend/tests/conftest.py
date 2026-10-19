@@ -1,3 +1,4 @@
+import asyncio
 import os
 import tempfile
 from collections.abc import Iterator
@@ -14,7 +15,9 @@ os.environ["ADMIN_PASSWORD"] = "admin-password"
 from alembic import command  # noqa: E402
 from alembic.config import Config  # noqa: E402
 from app.main import app  # noqa: E402
+from app.services import jobs, translation  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
+from subtaitles import TranslatedSegment, TranslationResponse, TranslationVariant  # noqa: E402
 
 ALEMBIC_CFG = Config(str(Path(__file__).parents[1] / "alembic.ini"))
 # The test schema comes from the real migrations.
@@ -46,3 +49,62 @@ def make_user(client: TestClient):
         return username, "password123"
 
     return _make
+
+
+class StubTranslator:
+    """Stands in for OpenAiTranslator: no network, deterministic output."""
+
+    model = "stub-model"
+
+    async def translate(self, request, progress=None):
+        segments = []
+        for seg in request.segments:
+            segments.append(
+                TranslatedSegment(seg.index, seg.text, f"[stub] {seg.text}", "translated")
+            )
+            if progress:
+                progress.current += 1
+        return TranslationResponse(tuple(segments), request.source, request.target)
+
+    async def retranslate(self, text, *, prompt=None, **_kwargs):
+        if prompt:
+            return [TranslationVariant("Custom", f"[custom] {text}")]
+        return [TranslationVariant(label, f"[{label}] {text}") for label in ("Literal", "Shorter")]
+
+
+class FakeQueue:
+    """Replaces the Celery task: jobs are recorded and only run when a test says so."""
+
+    def __init__(self) -> None:
+        self.job_ids: list[str] = []
+        self.fail = False
+
+    def delay(self, job_id: str) -> None:
+        if self.fail:
+            msg = "broker down"
+            raise ConnectionError(msg)
+        self.job_ids.append(job_id)
+
+    def run_all(self) -> None:
+        for job_id in self.job_ids:
+            asyncio.run(translation.run_job(job_id))
+
+
+@pytest.fixture(autouse=True)
+def translator(monkeypatch: pytest.MonkeyPatch) -> StubTranslator:
+    stub = StubTranslator()
+    monkeypatch.setattr(translation, "make_translator", lambda: stub)
+
+    async def no_lookup(_path: str) -> None:
+        msg = "offline"
+        raise RuntimeError(msg)
+
+    monkeypatch.setattr("mediasorter.whats_this", no_lookup)
+    return stub
+
+
+@pytest.fixture(autouse=True)
+def queue(monkeypatch: pytest.MonkeyPatch) -> FakeQueue:
+    fake = FakeQueue()
+    monkeypatch.setattr(jobs, "translate_job", fake)
+    return fake

@@ -28,8 +28,13 @@ function signOut() {
         <RouterLink to="/">Translate</RouterLink>
         <RouterLink to="/requests">My requests</RouterLink>
       </nav>
-      <StatusBadge tone="success" dot pulse>LLM v2.4 Active</StatusBadge>
-      <button type="button" class="avatar" aria-label="Sign out" title="Sign out" @click="signOut">
+      <button
+        type="button"
+        class="avatar"
+        aria-label="Sign out"
+        title="Sign out"
+        @click="signOut"
+      >
         <AppIcon name="user" :size="18" />
       </button>
     </div>

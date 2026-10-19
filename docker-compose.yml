@@ -1,0 +1,40 @@
+x-app-env: &app-env
+  DATABASE_URL: sqlite:////data/subtaitles.db
+  REDIS_URL: redis://redis:6379/0
+  SRT_CACHE_DIR: /data/cache
+  OPENAI_API_KEY: ${OPENAI_API_KEY:?set OPENAI_API_KEY in .env}
+  OPENAI_ORG_ID: ${OPENAI_ORG_ID:-}
+  OPENAI_MODEL: ${OPENAI_MODEL:-}
+  ADMIN_USERNAME: ${ADMIN_USERNAME:-}
+  ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+
+services:
+  web:
+    build: .
+    image: subt-ai-tles-app
+    ports:
+      - "80:80"
+    environment: *app-env
+    volumes:
+      - data:/data
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  worker:
+    image: subt-ai-tles-app
+    command: celery -A app.worker.celery_app worker --loglevel=INFO --concurrency=2
+    environment: *app-env
+    volumes:
+      - data:/data
+    depends_on:
+      - web
+      - redis
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+
+volumes:
+  data:

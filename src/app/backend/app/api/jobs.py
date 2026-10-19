@@ -1,6 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Form, Response, UploadFile, status
+from fastapi.concurrency import run_in_threadpool
 
 from app.config import settings
 from app.db import DbDep
@@ -17,7 +18,6 @@ def list_jobs(db: DbDep, user: CurrentUser, limit: int | None = None) -> list[Jo
     return [JobOut.model_validate(job) for job in jobs.list_for_user(db, user, limit)]
 
 
-# async: the background worker needs the running event loop.
 @router.post("", status_code=status.HTTP_201_CREATED, response_model_exclude_none=True)
 async def create_job(
     db: DbDep,
@@ -35,7 +35,7 @@ async def create_job(
         source_lang=source_lang,
         target_lang=target_lang,
     )
-    translation.start_job(job.id)
+    await run_in_threadpool(jobs.enqueue, db, job)
     return JobOut.model_validate(job)
 
 

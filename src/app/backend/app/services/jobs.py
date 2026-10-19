@@ -1,3 +1,4 @@
+import logging
 from datetime import timedelta
 from pathlib import PurePath
 
@@ -9,6 +10,9 @@ from app.config import settings
 from app.errors import ConflictError, InvalidInputError, NotFoundError
 from app.models import Cue, Job, JobStatus, User
 from app.services import languages
+from app.worker import translate_job
+
+logger = logging.getLogger(__name__)
 
 
 def list_for_user(db: Session, user: User, limit: int | None = None) -> list[Job]:
@@ -84,6 +88,18 @@ def create(  # noqa: PLR0913
     db.add(job)
     db.commit()
     return job
+
+
+def enqueue(db: Session, job: Job) -> None:
+    """Hand the job to the Celery worker. Blocking (broker I/O): call off the event loop."""
+    try:
+        translate_job.delay(job.id)
+    except Exception:
+        logger.exception("Could not queue job %s", job.id)
+        job.status = JobStatus.FAILED
+        job.error = "The translation could not be queued"
+        job.step = None
+        db.commit()
 
 
 def delete(db: Session, user: User, job_id: str) -> None:

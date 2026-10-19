@@ -142,7 +142,7 @@ async def translate_srt_file(  # noqa: PLR0913
         path = Path(path)
         logger.info(f"Translating subtitle file {path}")
         filename, ext = path.name.rsplit(".", 1)
-        new_path = Path(new_path) or path.parent
+        new_path = Path(new_path) if new_path else path.parent
         if new_path.is_dir():
             new_path = new_path / f"{filename}.{target.value}.{ext}"
         srt = pysrt.open(path.absolute())

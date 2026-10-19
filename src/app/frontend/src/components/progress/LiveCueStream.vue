@@ -23,7 +23,7 @@ const duration = computed(() => props.cue && ((props.cue.end - props.cue.start) 
         <span>{{ duration }}s duration</span>
       </p>
       <p class="src"><small class="mono">SRC</small> <q>{{ cue.source }}</q></p>
-      <p class="tgt"><small class="mono">TGT</small> <span>{{ cue.target }}<span class="cursor" aria-hidden="true">█</span></span></p>
+      <p v-if="cue.target" class="tgt"><small class="mono">TGT</small> <span>{{ cue.target }}<span class="cursor" aria-hidden="true">█</span></span></p>
     </div>
   </section>
 </template>

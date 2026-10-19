@@ -6,13 +6,20 @@ from fastapi.responses import JSONResponse
 
 from app.api import api_router
 from app.db import DbSessionMiddleware, SessionLocal
-from app.errors import ConflictError, InvalidInputError, NotFoundError, ServiceError
-from app.services import languages, translation, users
+from app.errors import (
+    ConflictError,
+    InvalidInputError,
+    NotFoundError,
+    ServiceError,
+    UpstreamError,
+)
+from app.services import languages, users
 
 _STATUS_BY_ERROR: dict[type[Exception], int] = {
     NotFoundError: status.HTTP_404_NOT_FOUND,
     ConflictError: status.HTTP_409_CONFLICT,
     InvalidInputError: 422,
+    UpstreamError: status.HTTP_502_BAD_GATEWAY,
 }
 
 
@@ -22,7 +29,6 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     with SessionLocal() as db:
         languages.seed(db)
         users.ensure_bootstrap_admin(db)
-        translation.recover_interrupted(db)
     yield
 
 

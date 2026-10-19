@@ -12,3 +12,7 @@ class ConflictError(ServiceError):
 
 class InvalidInputError(ServiceError):
     pass
+
+
+class UpstreamError(ServiceError):
+    pass

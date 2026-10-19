@@ -13,9 +13,12 @@ from pydantic import BaseModel, ValidationError
 from subtaitles.cache import CacheProtocol, disk_cache
 from subtaitles.environment import env
 from subtaitles.imports import batched
-from subtaitles.models import TranslatedSegment, TranslationResponse
+from subtaitles.models import TranslatedSegment, TranslationResponse, TranslationVariant
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from subtaitles.language import Lang
     from subtaitles.models import Segment, TranslationRequest
     from subtaitles.providers.protocol import Progress
 
@@ -112,6 +115,47 @@ class OpenAiTranslator:
         },
     }
 
+    RETRANSLATE_SYSTEM = """You are a professional subtitle translator. Translate the subtitle
+    "text" from {lang_from} to {lang_to}. Input is a JSON object with the subtitle "text", the
+    surrounding lines ("context_before" / "context_after", for understanding only, do NOT
+    translate them) and the requested "variants". Return exactly one translation per requested
+    variant, reusing its "label" and following its "instruction". Preserve line breaks (\\n)
+    where they make sense in the target language.
+    """
+
+    VARIANT_STYLES = {  # noqa: RUF012
+        "Literal": "Stay as close to the wording of the original as the target language allows.",
+        "Punchy / Action": "Short, energetic phrasing suited to fast action scenes.",
+        "Shorter": "As concise as possible while keeping the meaning, for fast reading.",
+    }
+
+    VARIANTS_FORMAT = {  # noqa: RUF012
+        "type": "json_schema",
+        "json_schema": {
+            "name": "subtitle_variants",
+            "strict": True,
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "variants": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "label": {"type": "string"},
+                                "text": {"type": "string"},
+                            },
+                            "required": ["label", "text"],
+                            "additionalProperties": False,
+                        },
+                    }
+                },
+                "required": ["variants"],
+                "additionalProperties": False,
+            },
+        },
+    }
+
     def __init__(
         self,
         model: str | None = None,
@@ -123,7 +167,7 @@ class OpenAiTranslator:
         self.model = model or env.OPENAI_MODEL(strict=True)
         self.client = AsyncOpenAI(
             api_key=openapi_key or env.OPENAI_API_KEY(strict=True),
-            organization=openapi_org or env.OPENAI_ORG_ID(strict=True),
+            organization=openapi_org or env.OPENAI_ORG_ID(),
         )
         self.batch_size = batch_size
         self.cache = cache or disk_cache
@@ -210,6 +254,9 @@ class OpenAiTranslator:
                     )
                 )
 
+        if progress:
+            progress.current += len(results)
+
         if missing:
             if retries_left <= 0:
                 raise ValueError(f"No translation for ids {[s.index for s in missing]}")
@@ -223,13 +270,53 @@ class OpenAiTranslator:
             )
 
         logger.debug(f"[OK] batch {batch_id} completed, retries-left={retries_left}")
-        if progress:
-            progress.current += 1
 
         if len(segments) != len(results):
             raise ValueError(f"Result count doesn't match: {segments=} != {results=}")
 
         return results
+
+    async def retranslate(  # noqa: PLR0913
+        self,
+        text: str,
+        *,
+        source: Lang,
+        target: Lang,
+        prompt: str | None = None,
+        context_before: Sequence[str] = (),
+        context_after: Sequence[str] = (),
+    ) -> list[TranslationVariant]:
+        """Alternative translations of a single subtitle.
+
+        With a ``prompt`` a single "Custom" variant follows that instruction, otherwise one
+        variant per entry of ``VARIANT_STYLES`` is returned.
+        """
+        styles = {"Custom": prompt} if prompt else self.VARIANT_STYLES
+        payload = {
+            "text": text,
+            "context_before": list(context_before),
+            "context_after": list(context_after),
+            "variants": [{"label": label, "instruction": hint} for label, hint in styles.items()],
+        }
+        response = await self.client.chat.completions.create(
+            model=self.model,
+            response_format=self.VARIANTS_FORMAT,
+            messages=[
+                {
+                    "role": "system",
+                    "content": self.RETRANSLATE_SYSTEM.format(
+                        lang_from=source.language.english, lang_to=target.language.english
+                    ),
+                },
+                {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
+            ],
+        )
+        data = json.loads(response.choices[0].message.content)
+        variants = [TranslationVariant(v["label"], v["text"]) for v in data["variants"]]
+        if not variants:
+            msg = "No variants returned"
+            raise ValueError(msg)
+        return variants
 
     async def translate(
         self,
@@ -240,11 +327,15 @@ class OpenAiTranslator:
         cached_results: dict[int, TranslatedSegment] = {}
         uncached: list[Segment] = []
 
+        if progress:
+            progress.total = len(request.segments)
+
         for seg in request.segments:
             key = seg.cache_key(source, target, self.model)
             cached = self.cache.get(key)
             if cached is not None:
-                progress.current += 1
+                if progress:
+                    progress.current += 1
                 cached_results[seg.index] = TranslatedSegment(
                     index=seg.index,
                     source=seg.text,
@@ -258,10 +349,6 @@ class OpenAiTranslator:
             self.process_batch(list(batch), request=request, batch_id=i, progress=progress)
             for i, batch in enumerate(batched(uncached, self.batch_size, strict=False))
         ]
-
-        if progress:
-            # progress.total = len(tasks) + len(cached_results)
-            progress.total = len(request.segments)
 
         all_results = dict(cached_results)
         for batch_results in await asyncio.gather(*tasks):

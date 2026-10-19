@@ -45,7 +45,7 @@ export function useJobProgress(jobId: Ref<string>, onComplete: () => void) {
       job.value = fresh;
       error.value = "";
       if (fresh.status === "ready") return onComplete();
-      if (fresh.status === "failed") return (error.value = "This translation failed.");
+      if (fresh.status === "failed") return (error.value = fresh.error ?? "This translation failed.");
       if (fresh.processedCues) cue.value = await getCue(jobId.value, fresh.processedCues);
     } catch {
       error.value = "We couldn't load this request.";
