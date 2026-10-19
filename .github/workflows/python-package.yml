@@ -30,7 +30,7 @@ jobs:
         python -m pip install uv
     - name: Install project
       run: |
-        uv sync --group dev
+        uv sync --all-packages --group dev
     - name: Lint with ruff
       run: |
         uv run ruff check

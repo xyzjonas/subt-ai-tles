@@ -1,0 +1,21 @@
+[project]
+name = "subt-ai-tles-app"
+version = "0.0.1"
+description = "Web app (FastAPI backend + Vue frontend) for subt-ai-tles. Not published."
+requires-python = ">=3.11"
+dependencies = [
+    "subt-ai-tles",
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+]
+
+[tool.uv.sources]
+subt-ai-tles = { workspace = true }
+
+[build-system]
+requires = ["uv_build>=0.8.17,<0.9.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-root = "backend"
+module-name = "app"
