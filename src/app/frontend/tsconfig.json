@@ -7,7 +7,7 @@
     "jsx": "preserve",
     "skipLibCheck": true,
     "noEmit": true,
-    "types": ["vite/client"]
+    "types": ["vite/client", "vite-plugin-pwa/client"]
   },
   "include": ["src/**/*.ts", "src/**/*.vue", "vite.config.ts"]
 }

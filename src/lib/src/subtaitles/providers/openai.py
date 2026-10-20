@@ -155,7 +155,7 @@ class OpenAiTranslator:
         openapi_key: str | None = None,
         openapi_org: str | None = None,
         batch_size: int = 120,
-        cache: CacheProtocol = None,
+        cache: CacheProtocol | None = None,
         temperature: float | None = 0,
     ) -> None:
         self.model = model or env.OPENAI_MODEL(strict=True)

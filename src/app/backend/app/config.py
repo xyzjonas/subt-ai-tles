@@ -16,8 +16,11 @@ class Settings(BaseSettings):
     # Translation engine credentials. Model and temperature are app settings (database).
     openai_api_key: str | None = None
     openai_org_id: str | None = None
-    # Shared by web and worker so a re-run of an interrupted job is cheap.
-    srt_cache_dir: str | None = None
+    # Translation cache: a dedicated cache-only Redis (evicts), NOT the Celery broker.
+    cache_redis_url: str = "redis://localhost:6379/1"
+    # Shared by web and worker so a re-run of an interrupted job is cheap. None: no expiry,
+    # the instance's LRU eviction bounds the size.
+    cache_ttl_seconds: int | None = None
 
 
 settings = Settings()

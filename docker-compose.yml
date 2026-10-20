@@ -1,7 +1,7 @@
 x-app-env: &app-env
   DATABASE_URL: sqlite:////data/subtaitles.db
   REDIS_URL: redis://redis:6379/0
-  SRT_CACHE_DIR: /data/cache
+  CACHE_REDIS_URL: redis://redis-cache:6379/0
   OPENAI_API_KEY: ${OPENAI_API_KEY:?set OPENAI_API_KEY in .env}
   OPENAI_ORG_ID: ${OPENAI_ORG_ID:-}
   ADMIN_USERNAME: ${ADMIN_USERNAME:-}
@@ -12,12 +12,13 @@ services:
     build: .
     image: subt-ai-tles-app
     ports:
-      - "80:80"
+      - "9142:80"
     environment: *app-env
     volumes:
       - data:/data
     depends_on:
       - redis
+      - redis-cache
     restart: unless-stopped
 
   worker:
@@ -29,11 +30,28 @@ services:
     depends_on:
       - web
       - redis
+      - redis-cache
     restart: unless-stopped
 
   redis:
     image: redis:7-alpine
+    # Celery BROKER only. Never evicts: dropping a key here would lose a queued job.
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
+  redis-cache:
+    image: redis:7-alpine
+    # CACHE ONLY (translation cache). Nothing else may be stored here: with allkeys-lru, any key
+    # can be evicted once the memory cap is hit. Entries never expire, the oldest-unused go first.
+    command: >
+      redis-server --appendonly yes --maxmemory 2gb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-cache-data:/data
     restart: unless-stopped
 
 volumes:
   data:
+  redis-data:
+  redis-cache-data:

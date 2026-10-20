@@ -8,14 +8,13 @@ import asyncio
 import contextlib
 import logging
 from dataclasses import dataclass
-from functools import cache
 
-import diskcache  # type: ignore[import-untyped]
 from openai import AuthenticationError, RateLimitError
 from pysrt import SubRipFile, SubRipItem, SubRipTime  # type: ignore[import-untyped]
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from subtaitles import (  # type: ignore[import-untyped]
+    CacheProtocol,
     Lang,
     OpenAiTranslator,
     ProgressData,
@@ -26,6 +25,7 @@ from subtaitles import (  # type: ignore[import-untyped]
     get_translation_request,
 )
 
+from app.cache import get_cache
 from app.config import settings
 from app.db import SessionLocal
 from app.errors import InvalidInputError, UpstreamError
@@ -40,19 +40,14 @@ _POLL_SECONDS = 0.5
 _CONTEXT_CUES = 2
 
 
-@cache
-def _cache() -> diskcache.Cache | None:
-    return diskcache.Cache(settings.srt_cache_dir) if settings.srt_cache_dir else None
-
-
-def make_translator(config: AppSettings) -> OpenAiTranslator:
+def make_translator(config: AppSettings, cache: CacheProtocol) -> OpenAiTranslator:
     """Build a fresh translator per use: its HTTP client is bound to the running event loop."""
     return OpenAiTranslator(
         model=config.model,
         temperature=app_settings.effective_temperature(config),
         openapi_key=settings.openai_api_key,
         openapi_org=settings.openai_org_id,
-        cache=_cache(),
+        cache=cache,
     )
 
 
@@ -81,7 +76,7 @@ def retranslate_cue(db: Session, cue: Cue, prompt: str | None) -> list[CueVarian
             .order_by(Cue.index)
         )
     )
-    translator = make_translator(app_settings.get(db))
+    translator = make_translator(app_settings.get(db), get_cache())
     usage.rate_for(db, translator.model)
     try:
         result = asyncio.run(
@@ -234,7 +229,7 @@ async def run_job(job_id: str) -> None:
             owner_id = job.owner_id
             query = select(Cue).where(Cue.job_id == job_id).order_by(Cue.index)
             cues = list(db.scalars(query))
-            translator = make_translator(app_settings.get(db))
+            translator = make_translator(app_settings.get(db), get_cache())
             usage.rate_for(db, translator.model)
             progress = ProgressData(total=len(cues), current=0)
             work = asyncio.create_task(

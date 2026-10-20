@@ -128,7 +128,7 @@ class FakeQueue:
 def translator(monkeypatch: pytest.MonkeyPatch) -> StubTranslator:
     stub = StubTranslator()
 
-    def build(config):
+    def build(config, cache):
         # what the real make_translator takes from the app settings
         stub.usage = Usage()  # the real translator is fresh per use
         stub.model = config.model

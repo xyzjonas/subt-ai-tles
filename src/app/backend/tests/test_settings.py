@@ -102,8 +102,8 @@ def test_make_translator_uses_settings(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.undo()  # the autouse stub replaces make_translator
     monkeypatch.setattr(translation.settings, "openai_api_key", "key")
 
-    warm = translation.make_translator(AppSettings(model="gpt-4.1-nano", temperature=0.4))
-    reasoning = translation.make_translator(AppSettings(model="gpt-5-nano", temperature=0.4))
+    warm = translation.make_translator(AppSettings(model="gpt-4.1-nano", temperature=0.4), {})
+    reasoning = translation.make_translator(AppSettings(model="gpt-5-nano", temperature=0.4), {})
 
     assert (warm.model, warm.temperature) == ("gpt-4.1-nano", 0.4)  # noqa: PLR2004
     assert (reasoning.model, reasoning.temperature) == ("gpt-5-nano", None)

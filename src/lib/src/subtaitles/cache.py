@@ -1,4 +1,4 @@
-from typing import Protocol, TypeVar
+from typing import Protocol
 
 from diskcache import Cache
 
@@ -7,12 +7,9 @@ from .environment import env
 disk_cache = Cache(env.CACHE_DIR.value)
 
 
-T = TypeVar("T")
+class CacheProtocol(Protocol):
+    def get(self, key: str) -> str | None: ...
 
-
-class CacheProtocol(Protocol[T]):
-    def get(self, key: str) -> T: ...
+    def __setitem__(self, key: str, value: str) -> None: ...
 
     def clear(self) -> None: ...
-
-    def __setattr__(self, key: str, value: T) -> None: ...
