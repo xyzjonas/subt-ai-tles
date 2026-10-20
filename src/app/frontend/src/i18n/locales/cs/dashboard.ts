@@ -4,7 +4,12 @@ const dashboard: typeof en = {
   title: "Přehled",
   lead: "Váš účet a kolik stojí vaše překlady.",
   sections: "Sekce přehledu",
-  tabs: { details: "Údaje o uživateli", usage: "Spotřeba", users: "Uživatelé", settings: "Nastavení" },
+  tabs: {
+    details: "Údaje o uživateli",
+    usage: "Spotřeba",
+    users: "Uživatelé",
+    settings: "Nastavení",
+  },
   credits: "{amount} kredit | {amount} kredity | {amount} kreditů",
   details: {
     title: "Účet",
@@ -18,7 +23,8 @@ const dashboard: typeof en = {
   quota: {
     title: "Měsíční kvóta",
     figures: "Využito {used} z {limit} kreditů · zbývá {left}",
-    exhausted: "Vyčerpali jste celou kvótu. Nové překlady jsou pozastavené, dokud se kvóta neobnoví prvního dne příštího měsíce (UTC).",
+    exhausted:
+      "Vyčerpali jste celou kvótu. Nové překlady jsou pozastavené, dokud se kvóta neobnoví prvního dne příštího měsíce (UTC).",
   },
   summary: {
     title: "Útrata",
@@ -26,7 +32,11 @@ const dashboard: typeof en = {
     periods: { day: "Denně", week: "Týdně", month: "Měsíčně" },
     headlines: { day: "Dnes", week: "Tento týden", month: "Tento měsíc" },
     tokens: "{n} tokenů",
-    caption: { day: "Kredity utracené za den", week: "Kredity utracené za týden", month: "Kredity utracené za měsíc" },
+    caption: {
+      day: "Kredity utracené za den",
+      week: "Kredity utracené za týden",
+      month: "Kredity utracené za měsíc",
+    },
     weekOf: "Týden od {day}",
     period: "Období",
     requests: "Požadavky",
@@ -34,8 +44,8 @@ const dashboard: typeof en = {
     credits: "Kredity",
   },
   records: {
-    title: "Požadavky",
-    empty: "Zatím žádné požadavky. Přeložte soubor a uvidíte zde jeho spotřebu.",
+    title: "Překlady",
+    empty: "Zatím žádné překlady. Přeložte soubor a uvidíte zde jeho spotřebu.",
     when: "Kdy",
     type: "Typ",
     model: "Model",
@@ -43,7 +53,11 @@ const dashboard: typeof en = {
     completion: "Výstup",
     credits: "Kredity",
     more: "Zobrazit další",
-    kind: { translate: "Překlad", retranslate: "Opětovný překlad řádku", summarize: "Shrnutí děje" },
+    kind: {
+      translate: "Překlad",
+      retranslate: "Opětovný překlad řádku",
+      summarize: "Shrnutí děje",
+    },
   },
   usageLoadFailed: "Vaši spotřebu se nepodařilo načíst.",
   userUsageLoadFailed: "Spotřebu tohoto uživatele se nepodařilo načíst.",
@@ -51,7 +65,8 @@ const dashboard: typeof en = {
   settings: {
     loadFailed: "Nastavení se nepodařilo načíst.",
     saveFailed: "Nastavení se nepodařilo uložit.",
-    intro: "Globální nastavení překladu. Platí pro nové překlady všech uživatelů.",
+    intro:
+      "Globální nastavení překladu. Platí pro nové překlady všech uživatelů.",
     note: "Platí pro nové překlady. Již běžící úlohy zůstanou u modelu, se kterým začaly.",
     reset: "Obnovit",
     save: "Uložit změny",
@@ -65,8 +80,10 @@ const dashboard: typeof en = {
     ratesUnit: "kreditů za 1 000 tokenů",
     thisModel: "Tento model",
     gpt_4_1_nano: "Rychlý a levný. Spolehlivý univerzál pro běžné titulky.",
-    gpt_5_nano: "Nejlevnější volba. Před odpovědí chvíli přemýšlí, což může pomoci u složitějších formulací.",
-    gpt_6_luna: "Nejnovější malý model. Stojí o něco víc a přináší nejnovější vylepšení.",
+    gpt_5_nano:
+      "Nejlevnější volba. Před odpovědí chvíli přemýšlí, což může pomoci u složitějších formulací.",
+    gpt_6_luna:
+      "Nejnovější malý model. Stojí o něco víc a přináší nejnovější vylepšení.",
   },
   temperature: {
     label: "Kreativita (teplota)",
@@ -74,9 +91,12 @@ const dashboard: typeof en = {
     literal: "Doslovně · konzistentně",
     creative: "Kreativně · různorodě",
     consistent: "Velmi konzistentní: stejný vstup dává stejný překlad.",
-    balanced: "Vyvážené: převážně konzistentní, s menší variabilitou ve formulacích.",
-    creativeNote: "Kreativní: volnější a pestřejší formulace. Hůře předvídatelné.",
-    unsupported: "Model {model} si náhodnost řídí sám, proto se toto nastavení u něj ignoruje. Vaše hodnota se zachová pro modely, které ji používají.",
+    balanced:
+      "Vyvážené: převážně konzistentní, s menší variabilitou ve formulacích.",
+    creativeNote:
+      "Kreativní: volnější a pestřejší formulace. Hůře předvídatelné.",
+    unsupported:
+      "Model {model} si náhodnost řídí sám, proto se toto nastavení u něj ignoruje. Vaše hodnota se zachová pro modely, které ji používají.",
   },
 };
 

@@ -4,7 +4,7 @@ const common: typeof en = {
   nav: {
     label: "Hlavní navigace",
     translate: "Překlad",
-    requests: "Moje požadavky",
+    requests: "Moje překlady",
     dashboard: "Přehled",
     signOut: "Odhlásit se",
     back: "Zpět",
@@ -14,7 +14,7 @@ const common: typeof en = {
     login: "Přihlášení",
     changePassword: "Změna hesla",
     translate: "Přeložit .srt",
-    requests: "Moje požadavky",
+    requests: "Moje překlady",
     dashboard: "Přehled",
     editor: "Export a formátování",
     job: "Překládání",

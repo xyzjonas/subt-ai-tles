@@ -77,11 +77,8 @@ async def get_translation_request(
         for provider in default_config.api:
             if provider.name == "tmdb":
                 provider.key = env.TMDB_API_KEY
-            metadata_providers_map[provider.name] = provider
 
-        fetched_meta = await whats_this(
-            str(Path(srt.path)), metadata_providers_map=metadata_providers_map
-        )
+        fetched_meta = await whats_this(str(Path(srt.path)), config=default_config)
         if isinstance(fetched_meta, TvShowMetadata):
             logger.debug(
                 f"Recognized as {fetched_meta.type}: {fetched_meta.series_title}, "
