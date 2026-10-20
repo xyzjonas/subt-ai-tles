@@ -6,7 +6,3 @@ class LanguageOut(CamelModel):
     name: str
     native: str | None = None
     flag: str
-
-
-class DetectedLanguage(CamelModel):
-    code: str

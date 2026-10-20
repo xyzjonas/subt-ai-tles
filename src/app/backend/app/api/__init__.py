@@ -8,7 +8,6 @@ from app.api import (
     cues,
     jobs,
     languages,
-    subtitles,
     usage,
 )
 
@@ -18,7 +17,6 @@ for _module in (
     languages,
     jobs,
     cues,
-    subtitles,
     usage,
     admin_users,
     admin_rates,

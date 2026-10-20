@@ -11,21 +11,22 @@ import sqlalchemy as sa
 from alembic import op
 
 
-revision: str = '5b1f3c9a7d42'
-down_revision: str | None = 'ca7e927597f6'
+revision: str = "5b1f3c9a7d42"
+down_revision: str | None = "ca7e927597f6"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    op.create_table('story_summaries',
-    sa.Column('key', sa.String(), nullable=False),
-    sa.Column('summary', sa.String(), nullable=False),
-    sa.Column('model', sa.String(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
-    sa.PrimaryKeyConstraint('key')
+    op.create_table(
+        "story_summaries",
+        sa.Column("key", sa.String(), nullable=False),
+        sa.Column("summary", sa.String(), nullable=False),
+        sa.Column("model", sa.String(), nullable=False),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        sa.PrimaryKeyConstraint("key"),
     )
 
 
 def downgrade() -> None:
-    op.drop_table('story_summaries')
+    op.drop_table("story_summaries")

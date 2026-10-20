@@ -4,15 +4,17 @@ import asyncio
 import json
 import random
 import re
+from collections import Counter
 from typing import TYPE_CHECKING
 
 from loguru import logger
 from openai import AsyncOpenAI, RateLimitError
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, Field, ValidationError
 
 from subtaitles.cache import CacheProtocol, disk_cache
 from subtaitles.environment import env
 from subtaitles.imports import batched
+from subtaitles.language import find_lang
 from subtaitles.models import (
     RetranslationResponse,
     TranslatedSegment,
@@ -40,6 +42,9 @@ class OpenAiTranslation(BaseModel):
 
 
 class OpenAiResponse(BaseModel):
+    source_language: str = Field(
+        description="ISO 639-1 code of the language the input items are written in"
+    )
     translations: list[OpenAiTranslation]
 
     @property
@@ -61,16 +66,26 @@ class OpenAiSummary(BaseModel):
 
 
 class UsageMeter:
-    """Sums the usage of the concurrent calls made within one ``translate()``."""
+    """Sums the usage and the detected languages of the calls of one ``translate()``."""
 
     def __init__(self) -> None:
         self.usage = Usage()
+        self.languages: Counter[Lang] = Counter()
+
+    @property
+    def source(self) -> Lang | None:
+        return self.languages.most_common(1)[0][0] if self.languages else None
 
     def add(self, usage: Usage) -> None:
         self.usage += usage
 
 
-_RETRY_RE = re.compile(r"try again in\s+(?:(\d+(?:\.\d+)?)m(?!s))?\s*(?:(\d+(?:\.\d+)?)s)?\s*(?:(\d+(?:\.\d+)?)ms)?", re.I)
+_RETRY_RE = re.compile(
+    r"try again in\s+(?:(\d+(?:\.\d+)?)m(?!s))?"
+    r"\s*(?:(\d+(?:\.\d+)?)s)?\s*(?:(\d+(?:\.\d+)?)ms)?",
+    re.IGNORECASE,
+)
+
 
 def get_retry_delay(e: RateLimitError, default: float = 1.0) -> float:
     # 1. Prefer headers if present (most reliable)
@@ -96,14 +111,8 @@ def get_retry_delay(e: RateLimitError, default: float = 1.0) -> float:
 
 
 class OpenAiTranslator:
-    #     context = """Translate subtitles from {lang_from} to {lang_to} accurately while
-    # maintaining the original meaning and tone. Use natural-sounding phrases and idioms
-    # that accurately convey the meaning of the original text. KEEP the delimiters '{delimiter}'
-    # in place to indicate item borders! Keep newlines \\n and \\r and do not consider them item
-    # delimiters,\nnewline characters are allowed within a single sentence. Response can't start or
-    # end with a {delimiter}. Make sure that the number of lines separated by {delimiter} is equal.
-    # """
-    SYSTEM = """You are a professional subtitle translator. Translate from {lang_from} to {lang_to}.
+    SYSTEM = """You are a professional subtitle translator. Translate into {lang_to}. The
+    source language is not given: infer it from the items and report it as "source_language".
 
     Input is a JSON object with "items" (to translate) and optional "context_before" /
     "context_after" (surrounding lines, for understanding only, do NOT translate them) and an
@@ -120,12 +129,13 @@ class OpenAiTranslator:
     """
 
     SUMMARY_SYSTEM = """You are preparing a story brief for a subtitle translator. Input is the
-    complete subtitle script of one {title} in {lang_from}, one "index|text" line per cue. Write the
+    complete subtitle script of one {title}, one "index|text" line per cue. Write the
     brief in English. It is attached to every translation request, so it must be as concise and
     information-dense as possible: telegraphic notes, no filler, at most {max_words} words.
 
     Cover only what helps translate the cues correctly:
-    - Characters: name, gender, role, relationships, and who addresses whom formally or informally.
+    - Characters: name, gender, role, relationships, and who addresses whom formally or
+      informally.
     - Premise and storyline in a few beats.
     - Settings, time period, genre and tone/register.
     - Recurring names, terms and jargon that must be rendered consistently.
@@ -136,7 +146,7 @@ class OpenAiTranslator:
     SUMMARY_MAX_CHARS = 400_000  # ~100k tokens, longer scripts are truncated
 
     RETRANSLATE_SYSTEM = """You are a professional subtitle translator. Translate the subtitle
-    "text" from {lang_from} to {lang_to}. Input is a JSON object with the subtitle "text", the
+    "text" into {lang_to}. Input is a JSON object with the subtitle "text", the
     surrounding lines ("context_before" / "context_after", for understanding only, do NOT
     translate them) and the requested "variants". Return exactly one translation per requested
     variant, reusing its "label" and following its "instruction". Preserve line breaks (\\n)
@@ -144,12 +154,12 @@ class OpenAiTranslator:
     """
 
     VARIANT_STYLES = {  # noqa: RUF012
-        "Literal": "Stay as close to the wording of the original as the target language allows.",
+        "Literal": "Stay as close to the original wording as the target language allows.",
         "Punchy / Action": "Short, energetic phrasing suited to fast action scenes.",
         "Shorter": "As concise as possible while keeping the meaning, for fast reading.",
     }
 
-    def __init__(
+    def __init__(  # noqa: PLR0913, PLR0917
         self,
         model: str | None = None,
         openapi_key: str | None = None,
@@ -178,10 +188,9 @@ class OpenAiTranslator:
         segments: list[Segment],
         request: TranslationRequest,
     ) -> dict:
+        meta = request.metadata
         payload = {
-            "context_before": f"Title: {request.metadata.title}, {request.metadata.description}"
-            if request.metadata
-            else "",
+            "context_before": f"Title: {meta.title}, {meta.description}" if meta else "",
             "items": [{"id": s.index, "text": s.text} for s in segments],
             "context_after": "",
         }
@@ -195,10 +204,7 @@ class OpenAiTranslator:
             "input": [
                 {
                     "role": "system",
-                    "content": self.SYSTEM.format(
-                        lang_from=request.source.language.english,
-                        lang_to=request.target.language.english,
-                    ),
+                    "content": self.SYSTEM.format(lang_to=request.target.language.english),
                 },
                 {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
             ],
@@ -225,10 +231,12 @@ class OpenAiTranslator:
             if retries_left <= 0:
                 logger.exception(e)
                 raise
-            random_coefficient = random.randint(5,30)
+            random_coefficient = random.randint(5, 30)  # noqa: S311 - backoff jitter
             delay = get_retry_delay(e)
             delay = delay * random_coefficient * (API_RETRIES + 1 - retries_left)
-            logger.warning(f"Rate limited, retrying in {delay:.3f}s ({retries_left} retries left)")
+            logger.warning(
+                f"Rate limited, retrying in {delay:.3f}s ({retries_left} retries left)"
+            )
             await asyncio.sleep(delay)
             return await self.__call(completion, retries_left=retries_left - 1, meter=meter)
         except ValidationError as e:
@@ -243,7 +251,9 @@ class OpenAiTranslator:
             logger.error("Malformed response: nothing parsed (refusal or incomplete output)")
             if retries_left > 0:
                 await asyncio.sleep(0.1)
-                return await self.__call(completion, retries_left=retries_left - 1, meter=meter)
+                return await self.__call(
+                    completion, retries_left=retries_left - 1, meter=meter
+                )
             msg = "No parsed output returned"
             raise ValueError(msg)
         return response.output_parsed
@@ -265,13 +275,16 @@ class OpenAiTranslator:
         completion = self.get_completion(segments, request)
         response = await self.__call(completion, retries_left=API_RETRIES, meter=meter)
 
+        if meter and (language := find_lang(response.source_language)):
+            meter.languages[language] += 1
+
         results, missing = [], []
         for seg in segments:
             text = response.mapping.get(seg.index)
             if text is None or not text.strip():
                 missing.append(seg)
             else:
-                self.cache[seg.cache_key(request.source, request.target, self.model)] = text
+                self.cache[seg.cache_key(request.target, self.model)] = text
                 results.append(
                     TranslatedSegment(
                         index=seg.index, source=seg.text, translation=text, status="translated"
@@ -283,7 +296,8 @@ class OpenAiTranslator:
 
         if missing:
             if retries_left <= 0:
-                raise ValueError(f"No translation for ids {[s.index for s in missing]}")
+                msg = f"No translation for ids {[s.index for s in missing]}"
+                raise ValueError(msg)
 
             results += await self.process_batch(
                 missing,
@@ -297,15 +311,15 @@ class OpenAiTranslator:
         logger.debug(f"[OK] batch {batch_id} completed, retries-left={retries_left}")
 
         if len(segments) != len(results):
-            raise ValueError(f"Result count doesn't match: {segments=} != {results=}")
+            msg = f"Result count doesn't match: {segments=} != {results=}"
+            raise ValueError(msg)
 
         return results
 
-    async def retranslate(  # noqa: PLR0913
+    async def retranslate(
         self,
         text: str,
         *,
-        source: Lang,
         target: Lang,
         prompt: str | None = None,
         context_before: Sequence[str] = (),
@@ -321,7 +335,9 @@ class OpenAiTranslator:
             "text": text,
             "context_before": list(context_before),
             "context_after": list(context_after),
-            "variants": [{"label": label, "instruction": hint} for label, hint in styles.items()],
+            "variants": [
+                {"label": label, "instruction": hint} for label, hint in styles.items()
+            ],
         }
         response = await self.client.responses.parse(
             model=self.model,
@@ -330,16 +346,16 @@ class OpenAiTranslator:
             input=[
                 {
                     "role": "system",
-                    "content": self.RETRANSLATE_SYSTEM.format(
-                        lang_from=source.language.english, lang_to=target.language.english
-                    ),
+                    "content": self.RETRANSLATE_SYSTEM.format(lang_to=target.language.english),
                 },
                 {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
             ],
         )
         usage = self._track(response)
         parsed = response.output_parsed
-        variants = [TranslationVariant(v.label, v.text) for v in parsed.variants] if parsed else []
+        variants = (
+            [TranslationVariant(v.label, v.text) for v in parsed.variants] if parsed else []
+        )
         if not variants:
             msg = "No variants returned"
             raise ValueError(msg)
@@ -357,7 +373,6 @@ class OpenAiTranslator:
                     "role": "system",
                     "content": self.SUMMARY_SYSTEM.format(
                         title=request.metadata.title if request.metadata else "title",
-                        lang_from=request.source.language.english,
                         max_words=self.SUMMARY_MAX_WORDS,
                     ),
                 },
@@ -376,7 +391,7 @@ class OpenAiTranslator:
         request: TranslationRequest,
         progress: Progress | None = None,
     ) -> TranslationResponse:
-        source, target = request.source, request.target
+        target = request.target
         cached_results: dict[int, TranslatedSegment] = {}
         uncached: list[Segment] = []
 
@@ -384,7 +399,7 @@ class OpenAiTranslator:
             progress.total = len(request.segments)
 
         for seg in request.segments:
-            key = seg.cache_key(source, target, self.model)
+            key = seg.cache_key(target, self.model)
             cached = self.cache.get(key)
             if cached is not None:
                 if progress:
@@ -413,5 +428,9 @@ class OpenAiTranslator:
 
         ordered = tuple(all_results[seg.index] for seg in request.segments)
         return TranslationResponse(
-            segments=ordered, source=source, target=target, usage=meter.usage, model=self.model
+            segments=ordered,
+            target=target,
+            source=meter.source,
+            usage=meter.usage,
+            model=self.model,
         )

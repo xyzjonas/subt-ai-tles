@@ -2,7 +2,7 @@
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import type { Job } from "../../api/types";
-import { displayLanguage } from "../../utils/language";
+import { displayLanguage, languageCode } from "../../utils/language";
 import { formatRunningTime, formatWhen } from "../../utils/srt";
 import AppIcon from "../ui/AppIcon.vue";
 import StatusBadge from "../ui/StatusBadge.vue";
@@ -14,7 +14,7 @@ const { t, locale } = useI18n();
 
 const language = computed(() => displayLanguage(props.job.targetLang, locale.value) ?? props.job.targetLang);
 const cells = computed(() => [
-  { label: t("editor.summary.pair"), value: `${props.job.sourceLang.toUpperCase()} → ${props.job.targetLang.toUpperCase()} (${language.value})` },
+  { label: t("editor.summary.pair"), value: `${languageCode(props.job.sourceLang)} → ${props.job.targetLang.toUpperCase()} (${language.value})` },
   { label: t("editor.summary.density"), value: t("editor.summary.lines", { count: props.lines }, props.lines) },
   { label: t("editor.summary.runningTime"), value: formatRunningTime(props.runningTime) },
   { label: t("editor.summary.completed"), value: formatWhen(props.job.createdAt) },

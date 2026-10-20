@@ -16,7 +16,8 @@ export type SummaryStatus = "generated" | "stored" | "skipped" | "failed";
 export interface Job {
   id: string;
   fileName: string;
-  sourceLang: string;
+  /** Language of the file as inferred by the model (display only), once known. */
+  sourceLang?: string;
   targetLang: string;
   cueCount: number;
   createdAt: string;
@@ -42,7 +43,6 @@ export interface JobEstimate {
 
 export interface CreateJobPayload {
   file: File;
-  sourceLang: string;
   targetLang: string;
 }
 

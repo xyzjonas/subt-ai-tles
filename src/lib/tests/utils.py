@@ -26,6 +26,5 @@ class MockedTranslator:
         )
         return TranslationResponse(
             segments=segments,
-            source=request.source,
             target=request.target,
         )

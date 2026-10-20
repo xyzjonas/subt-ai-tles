@@ -1,12 +1,16 @@
 import type en from "../en/editor";
 
 const editor: typeof en = {
-  loadFailed: "Tento požadavek se nepodařilo načíst.",
-  back: "Zpět na Moje požadavky",
+  loadFailed: "Tento překlad se nepodařilo načíst.",
+  back: "Zpět na Moje překlady",
   noMatch: "Žádné řádky neodpovídají.",
   showMore: "Zobrazit další (zbývá {count})",
-  confirmResync: "Opětovná synchronizace znovu načte všechny řádky a zahodí změny, které jste nepřijali. Pokračovat?",
-  search: { placeholder: "Hledat v textu řádků nebo podle čísla #titulku...", label: "Hledat v řádcích" },
+  confirmResync:
+    "Opětovná synchronizace znovu načte všechny řádky a zahodí změny, které jste nepřijali. Pokračovat?",
+  search: {
+    placeholder: "Hledat v textu řádků nebo podle čísla #titulku...",
+    label: "Hledat v řádcích",
+  },
   filters: {
     label: "Filtrovat řádky",
     all: "Všechny řádky",
@@ -15,7 +19,10 @@ const editor: typeof en = {
     cps: "Vysoké CPS",
     item: "{label} ({count})",
   },
-  actionBar: { download: "Stáhnout celé SRT", sync: "Znovu synchronizovat všechny řádky" },
+  actionBar: {
+    download: "Stáhnout soubor",
+    sync: "Znovu synchronizovat všechny řádky",
+  },
   summary: {
     label: "Souhrn souboru",
     model: "Model: {model}",
@@ -36,10 +43,11 @@ const editor: typeof en = {
     modified: "Upraveno",
     highCps: "Vysoké CPS",
     source: "{lang} (ZDROJ)",
+    sourceUnknown: "ZDROJ",
     target: "{lang} (CÍL)",
     unsaved: "Neuloženo",
     edited: "Upraveno ručně",
-    autoTuned: "Automaticky vyladěno",
+    autoTuned: "Automaticky přeloženo",
     editLabel: "Upravit překlad",
     alternativesFailed: "Alternativy se nepodařilo načíst",
     saveFailed: "Tento řádek se nepodařilo uložit",

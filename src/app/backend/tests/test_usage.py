@@ -138,7 +138,7 @@ def test_quota_blocks_new_work(
     upload = client.post(
         "/api/jobs",
         files={"file": ("movie.srt", b"1\n00:00:01,000 --> 00:00:02,000\nHi\n", "text/plain")},
-        data={"sourceLang": "en", "targetLang": "de"},
+        data={"targetLang": "de"},
         auth=hal,
     )
     retranslate = client.post(f"/api/jobs/{job['id']}/cues/1/retranslate", json={}, auth=hal)
@@ -161,7 +161,7 @@ def test_unlisted_model_is_rejected(client: TestClient, make_user: Callable) -> 
             files={
                 "file": ("movie.srt", b"1\n00:00:01,000 --> 00:00:02,000\nHi\n", "text/plain")
             },
-            data={"sourceLang": "en", "targetLang": "de"},
+            data={"targetLang": "de"},
             auth=ivy,
         )
     finally:

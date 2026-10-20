@@ -4,6 +4,9 @@ import type { Locale } from "../i18n";
 /** Flag shown for a UI language. */
 export const LOCALE_FLAGS: Record<Locale, string> = { en: "🇬🇧", cs: "🇨🇿" };
 
+/** Upper-cased language code, `?` while the language is not known yet. */
+export const languageCode = (code?: string | null): string => code?.toUpperCase() ?? "?";
+
 /** Name of a language code in the UI language, e.g. `cs` -> `Czech` / `čeština`. */
 export function displayLanguage(code: string, locale: string): string | undefined {
   try {

@@ -34,6 +34,7 @@ export default {
     modified: "Modified",
     highCps: "High CPS",
     source: "{lang} (SOURCE)",
+    sourceUnknown: "SOURCE",
     target: "{lang} (TARGET)",
     unsaved: "Unsaved",
     edited: "Edited",

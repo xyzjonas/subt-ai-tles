@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-from loguru import logger
 from copy import deepcopy
 from dataclasses import replace
 from datetime import timedelta
@@ -9,17 +8,19 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pysrt
+from loguru import logger
 from pysrt import SubRipFile
 
 from subtaitles.srt import strip_newlines
-from . import TranslationResponse
 
+from .environment import env
 from .exceptions import FailedToTranslateError
-from .models import Segment, SummaryStatus, TranslationRequest, TitleMetadata
+from .models import Segment, SummaryStatus, TitleMetadata, TranslationRequest
 from .providers import Engine, TranslateProtocol, get_translator
 from .srt import reapply_whole_line_markup, strip_srt_markup
 
 if TYPE_CHECKING:
+    from . import TranslationResponse
     from .language import Lang
     from .providers.protocol import Progress, SummaryStoreProtocol
 
@@ -53,7 +54,7 @@ async def add_summary(
             status = SummaryStatus.GENERATED
             if store:
                 await store.put(key, summary)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - the brief is optional, never fail the job
         logger.warning(f"Can't summarize {key}: {e}")
         return request, SummaryStatus.FAILED
     return replace(request, summary=summary), status
@@ -61,7 +62,6 @@ async def add_summary(
 
 async def get_translation_request(
     srt: SubRipFile,
-    source: Lang,
     target: Lang,
     translator: Engine | TranslateProtocol,
 ) -> tuple[TranslateProtocol, TranslationRequest]:
@@ -70,12 +70,22 @@ async def get_translation_request(
 
     meta = None
     try:
-        from mediasorter import whats_this, TvShowMetadata
+        from mediasorter import TvShowMetadata, whats_this  # noqa: PLC0415
+        from mediasorter.lib.config import default_config  # noqa: PLC0415
 
-        fetched_meta = await whats_this(str(Path(srt.path)))
+        metadata_providers_map = {}
+        for provider in default_config.api:
+            if provider.name == "tmdb":
+                provider.key = env.TMDB_API_KEY
+            metadata_providers_map[provider.name] = provider
+
+        fetched_meta = await whats_this(
+            str(Path(srt.path)), metadata_providers_map=metadata_providers_map
+        )
         if isinstance(fetched_meta, TvShowMetadata):
             logger.debug(
-                f"Recognized as {fetched_meta.type}: {fetched_meta.series_title}, adding to context."
+                f"Recognized as {fetched_meta.type}: {fetched_meta.series_title}, "
+                "adding to context."
             )
             meta = TitleMetadata(
                 title=fetched_meta.series_title,
@@ -95,7 +105,7 @@ async def get_translation_request(
                 description=fetched_meta.summary,
                 key=_media_key("movie", fetched_meta.title, str(fetched_meta.year)),
             )
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - metadata is optional, translate without it
         logger.warning(f"Can't fetch media metadata: {e}")
 
     segments = tuple(
@@ -119,9 +129,7 @@ async def get_translation_request(
         for i, item in enumerate(srt)
     )
 
-    return translator, TranslationRequest(
-        segments=segments, source=source, target=target, metadata=meta
-    )
+    return translator, TranslationRequest(segments=segments, target=target, metadata=meta)
 
 
 def get_translated_srt(
@@ -146,7 +154,6 @@ def get_translated_srt(
 
 async def translate_srt(
     srt: SubRipFile,
-    source: Lang,
     target: Lang,
     translator: Engine | TranslateProtocol,
     progress: Progress | None = None,
@@ -155,14 +162,13 @@ async def translate_srt(
     """Translate subtitle file (.srt) a parsed SubRipFile object.
 
     :param srt: parsed srt file
-    :param source: source language
     :param target: target language
     :param translator: translation engine or translator instance
     :param progress: progress object
     :param summaries: optional store to persist story briefs of recognized titles
     :return: translated subtitle file as SubRipFile object
     """
-    translator, request = await get_translation_request(srt, source, target, translator)
+    translator, request = await get_translation_request(srt, target, translator)
     request, _ = await add_summary(request, translator, summaries)
 
     response = await translator.translate(request, progress)
@@ -170,9 +176,8 @@ async def translate_srt(
     return get_translated_srt(srt, request, response)
 
 
-async def translate_srt_file(  # noqa: PLR0913
+async def translate_srt_file(  # noqa: PLR0913, PLR0917
     path: Path | str,
-    source: Lang,
     target: Lang,
     translator: Engine | TranslateProtocol,
     new_path: Path | str | None = None,
@@ -182,7 +187,6 @@ async def translate_srt_file(  # noqa: PLR0913
     """Translate subtitle file (.srt) given a path on the local filesystem.
 
     :param path: filesystem path to the srt source file
-    :param source: source language
     :param target: target language
     :param translator: translation engine type or translator instance
     :param new_path: arbitrary path to the new file with translated subtitles
@@ -199,7 +203,7 @@ async def translate_srt_file(  # noqa: PLR0913
             new_path = new_path / f"{filename}.{target.value}.{ext}"
         srt = pysrt.open(path.absolute())
 
-        result = await translate_srt(srt, source, target, translator, progress, summaries)
+        result = await translate_srt(srt, target, translator, progress, summaries)
         with new_path.open("w") as file:
             result.write_into(file)
 

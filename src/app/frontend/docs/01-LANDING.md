@@ -3,7 +3,7 @@
 ## 1. Screen Metadata
 - **Route / Title**: `Translate .SRT - subt-ai-tles`
 - **Shell Layout**: `mobile_tab` (Top App Bar + Persistent Bottom Dock with active tab on "Translate")
-- **Purpose**: Allow users to drag-and-drop or select an SRT subtitle file, detect source language, pick target translation language, configure context/tone parameters, and kick off the AI translation job.
+- **Purpose**: Allow users to drag-and-drop or select an SRT subtitle file, pick target translation language, configure context/tone parameters, and kick off the AI translation job.
 
 ---
 
@@ -36,11 +36,7 @@
 
 ### D. Language Pairing Selector
 - **Section Label**: `LANGUAGE PAIRING` with right-aligned tag `文A LLM Translation`.
-- **Source Language (From)**:
-  - Input card showing `From (Detected)` label, Globe icon, and language name (e.g. `English`).
-  - Badge indicator: `Auto` (automatic detection pill).
-- **Swap / Directional Indicator**:
-  - Floating circular switch button (`32x32px`, `bg: #4f46e5`, white swap icon `⇅`) centered between cards.
+- **Source language**: not an input. The model infers it while translating; it is only displayed afterwards (job list, progress, editor).
 - **Target Language (To)**:
   - Input card showing `To (Target)` label, Flag icon, and language name (e.g. `Japanese (日本語)`).
   - Change trigger text / chevron button (`Change`).

@@ -2,7 +2,7 @@
 
 ## IMPORTANT!!!
 - use literal relative paths, no shell variables or command substitution in file commands
-- don't use cd to parent paths, stay within the repository folder!
+- don't use cd to parent paths, stay within the repository folder! You must avoid triggering 'permissions.blockReadsOutsideWorkingDirectories' (path that is computed at run time, which cannot be checked against the read block)
 
 ## UI/UX Design/implementation
 

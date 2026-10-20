@@ -149,6 +149,17 @@ class Lang(Enum):
         return mapping[self.value]
 
 
+def find_lang(identifier: str) -> Lang | None:
+    """Resolve an ISO code, alias or english name (any case) to a Lang."""
+    needle = identifier.strip().lower()
+    for lang in Lang:
+        language = lang.language
+        if needle in (language.iso, language.english, *language.aliases):
+            return lang
+
+    return None
+
+
 def guess_lang(text: str) -> Lang | None:
     languages = "|".join({lang.value for lang in Lang})
     pattern = re.compile(r"\.(" + languages + r")\.")

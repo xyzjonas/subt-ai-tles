@@ -22,8 +22,10 @@ const lang = (code: string) => displayLanguage(code, locale.value) ?? code;
     <p class="specs mono">{{ t("progress.overview.specs", { ago: timeAgo(job.createdAt) }) }}</p>
 
     <p class="route">
-      <span class="lang"><b>{{ job.sourceLang.toUpperCase() }}</b> {{ lang(job.sourceLang) }}</span>
-      <AppIcon name="arrow" :size="14" />
+      <template v-if="job.sourceLang">
+        <span class="lang"><b>{{ job.sourceLang.toUpperCase() }}</b> {{ lang(job.sourceLang) }}</span>
+        <AppIcon name="arrow" :size="14" />
+      </template>
       <span class="lang"><b>{{ job.targetLang.toUpperCase() }}</b> {{ lang(job.targetLang) }}</span>
       <span class="cues mono">{{ t("cues", { count: job.cueCount }, job.cueCount) }}</span>
     </p>

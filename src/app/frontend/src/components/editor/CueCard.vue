@@ -11,7 +11,7 @@ import VariantPicker from "./VariantPicker.vue";
 
 const props = defineProps<{
   cue: EditorCue;
-  sourceLang: string;
+  sourceLang?: string;
   targetLang: string;
   variants?: CueVariant[];
   status?: "loading" | "error";
@@ -86,7 +86,7 @@ function save() {
     <div class="texts">
       <section class="block">
         <h3 class="section-label">
-          <span class="dot" /> {{ t("editor.cue.source", { lang: sourceLang.toUpperCase() }) }}
+          <span class="dot" /> {{ sourceLang ? t("editor.cue.source", { lang: sourceLang.toUpperCase() }) : t("editor.cue.sourceUnknown") }}
         </h3>
         <p class="source">{{ cue.source }}</p>
       </section>

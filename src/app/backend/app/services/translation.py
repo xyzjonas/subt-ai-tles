@@ -55,11 +55,6 @@ def estimate(cue_count: int) -> JobEstimate:
     return JobEstimate(seconds=max(5, round(cue_count / 24)), tokens=cue_count * 5)
 
 
-def detect_language(content: bytes) -> str:  # noqa: ARG001
-    """Return the detected language. PLACEHOLDER: always English."""
-    return "en"
-
-
 def retranslate_cue(db: Session, cue: Cue, prompt: str | None) -> list[CueVariant]:
     job = db.get(Job, cue.job_id)
     if job is None:
@@ -82,7 +77,6 @@ def retranslate_cue(db: Session, cue: Cue, prompt: str | None) -> list[CueVarian
         result = asyncio.run(
             translator.retranslate(
                 cue.source,
-                source=Lang(job.source_lang),
                 target=Lang(job.target_lang),
                 prompt=prompt,
                 context_before=[c.source for c in neighbours if c.index < cue.index],
@@ -197,17 +191,16 @@ def _to_srt(job: Job, cues: list[Cue]) -> SubRipFile:
     return SubRipFile(items=items, path=job.file_name)
 
 
-async def _translate(  # noqa: PLR0913
+async def _translate(
     srt: SubRipFile,
-    source: Lang,
     target: Lang,
     translator: OpenAiTranslator,
     progress: ProgressData,
     pipeline: _Pipeline,
-) -> SubRipFile:
-    """recognize the title, brief the model on the story, then translate the cues."""
+) -> tuple[SubRipFile, Lang | None]:
+    """Recognize the title, brief the model on the story, then translate the cues."""
     pipeline.stage = JobStage.RECOGNIZING
-    _, request = await get_translation_request(srt, source, target, translator)
+    _, request = await get_translation_request(srt, target, translator)
 
     if request.metadata and request.metadata.key:
         pipeline.stage = JobStage.SUMMARIZING
@@ -218,7 +211,7 @@ async def _translate(  # noqa: PLR0913
     pipeline.stage = JobStage.TRANSLATING
     pipeline.translate_baseline = translator.usage
     response = await translator.translate(request, progress)
-    return get_translated_srt(srt, request, response)
+    return get_translated_srt(srt, request, response), response.source
 
 
 async def run_job(job_id: str) -> None:
@@ -239,7 +232,6 @@ async def run_job(job_id: str) -> None:
             work = asyncio.create_task(
                 _translate(
                     _to_srt(job, cues),
-                    Lang(job.source_lang),
                     Lang(job.target_lang),
                     translator,
                     progress,
@@ -255,11 +247,12 @@ async def run_job(job_id: str) -> None:
                     with contextlib.suppress(asyncio.CancelledError):
                         await work
                     return
-            translated = work.result()
+            translated, source = work.result()
             if _load(db, job_id) is None:
                 return
             for cue, item in zip(cues, translated, strict=True):
                 cue.target = item.text
+            job.source_lang = source.value if source else None
             job.processed_cues = job.cue_count
             job.status = JobStatus.READY
             job.stage = JobStage.TRANSLATING

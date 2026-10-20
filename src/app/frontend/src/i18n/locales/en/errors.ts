@@ -28,7 +28,6 @@ export default {
     file_not_utf8: "The file must be UTF-8 encoded.",
     file_invalid_srt: "This doesn't look like a valid .srt file.",
     file_empty: "The file contains no subtitles.",
-    same_language: "The source and target language must be different.",
     unknown_language: "Unknown language: {language}.",
     username_taken: "That username is already taken.",
     last_admin: "There must always be at least one active administrator.",

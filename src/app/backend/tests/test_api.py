@@ -14,7 +14,7 @@ def _upload(client: TestClient, auth: tuple[str, str], body: bytes = SRT.encode(
     r = client.post(
         "/api/jobs",
         files={"file": ("movie.srt", body, "application/x-subrip")},
-        data={"sourceLang": "en", "targetLang": "de"},
+        data={"targetLang": "de"},
         auth=auth,
     )
     assert r.status_code == 201, r.text
@@ -74,11 +74,13 @@ def test_job_lifecycle(client: TestClient, make_user: Callable, queue: FakeQueue
     job = _upload(client, bob)
     assert job["status"] == "processing"
     assert job["cueCount"] == 2
+    assert "sourceLang" not in job  # inferred by the model while translating
     assert queue.job_ids == [job["id"]]
 
     done = _finish(client, queue, bob, job["id"])
     assert done["status"] == "ready"
     assert done["processedCues"] == 2
+    assert done["sourceLang"] == "en"
     assert done["model"] == "gpt-4.1-nano"
 
     cues = client.get(f"/api/jobs/{job['id']}/cues", auth=bob).json()
@@ -204,6 +206,7 @@ def test_progress_is_persisted_while_running(
     assert seen == [(1, JobStage.TRANSLATING)]
     assert done["status"] == "ready"
     assert done["processedCues"] == 2
+    assert done["sourceLang"] == "en"
 
 
 def test_cancel_stops_running_translation(
@@ -243,28 +246,23 @@ def test_ownership_isolation(client: TestClient, make_user: Callable) -> None:
 
 
 def test_upload_validation(client: TestClient) -> None:
-    def post(name: str, body: bytes, source: str = "en", target: str = "de") -> int:
+    def post(name: str, body: bytes, target: str = "de") -> int:
         return client.post(
             "/api/jobs",
             files={"file": (name, body)},
-            data={"sourceLang": source, "targetLang": target},
+            data={"targetLang": target},
             auth=ADMIN,
         ).status_code
 
     assert post("movie.txt", SRT.encode()) == 422
     assert post("movie.srt", b"\xff\xfe\x00bad") == 422
     assert post("movie.srt", b"not an srt") == 422
-    assert post("movie.srt", SRT.encode(), "en", "en") == 422
-    assert post("movie.srt", SRT.encode(), "en", "zz") == 422
+    assert post("movie.srt", SRT.encode(), "zz") == 422
 
 
-def test_estimate_and_detect(client: TestClient) -> None:
+def test_estimate(client: TestClient) -> None:
     est = client.post("/api/jobs/estimate", json={"cueCount": 240}, auth=ADMIN).json()
     assert est == {"seconds": 10, "tokens": 1200}
-    r = client.post(
-        "/api/subtitles/detect-language", files={"file": ("a.srt", SRT.encode())}, auth=ADMIN
-    )
-    assert r.json() == {"code": "en"}
 
 
 def test_temporary_password_must_be_changed_on_first_login(client: TestClient) -> None:

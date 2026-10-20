@@ -3,6 +3,7 @@ x-app-env: &app-env
   REDIS_URL: redis://redis:6379/0
   CACHE_REDIS_URL: redis://redis-cache:6379/0
   OPENAI_API_KEY: ${OPENAI_API_KEY:?set OPENAI_API_KEY in .env}
+  TMDB_API_KEY: ${TMDB_API_KEY:?set TMDB_API_KEY in .env}
   OPENAI_ORG_ID: ${OPENAI_ORG_ID:-}
   ADMIN_USERNAME: ${ADMIN_USERNAME:-}
   ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}

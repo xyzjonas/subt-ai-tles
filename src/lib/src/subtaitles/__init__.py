@@ -14,8 +14,8 @@ from .models import (
     Usage,
 )
 from .providers import Engine, TranslateProtocol
-from .providers.protocol import SummaryStoreProtocol
 from .providers.openai import OpenAiTranslator
+from .providers.protocol import SummaryStoreProtocol
 from .task import ProgressData
 from .translate import (
     add_summary,

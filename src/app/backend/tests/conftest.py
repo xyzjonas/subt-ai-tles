@@ -18,6 +18,7 @@ from app.main import app  # noqa: E402
 from app.services import app_settings, jobs, translation  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 from subtaitles import (  # noqa: E402
+    Lang,
     RetranslationResponse,
     TranslatedSegment,
     TranslationResponse,
@@ -99,7 +100,7 @@ class StubTranslator:
             msg = "boom"
             raise RuntimeError(msg)
         return TranslationResponse(
-            tuple(segments), request.source, request.target, usage=used, model=self.model
+            tuple(segments), request.target, source=Lang.EN, usage=used, model=self.model
         )
 
     async def retranslate(self, text, *, prompt=None, **_kwargs):
@@ -137,7 +138,7 @@ class FakeQueue:
 def translator(monkeypatch: pytest.MonkeyPatch) -> StubTranslator:
     stub = StubTranslator()
 
-    def build(config, cache):
+    def build(config, _cache):
         # what the real make_translator takes from the app settings
         stub.usage = Usage()  # the real translator is fresh per use
         stub.model = config.model

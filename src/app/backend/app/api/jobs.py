@@ -23,7 +23,6 @@ async def create_job(
     db: DbDep,
     user: CurrentUser,
     file: UploadFile,
-    source_lang: Annotated[str, Form(alias="sourceLang")],
     target_lang: Annotated[str, Form(alias="targetLang")],
 ) -> JobOut:
     content = await file.read(settings.max_srt_bytes + 1)
@@ -32,7 +31,6 @@ async def create_job(
         user,
         file_name=file.filename or "subtitles.srt",
         content=content,
-        source_lang=source_lang,
         target_lang=target_lang,
     )
     await run_in_threadpool(jobs.enqueue, db, job)

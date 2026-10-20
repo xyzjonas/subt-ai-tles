@@ -21,7 +21,6 @@ asyncio.run(
         path="/tmp/subtitles.en.srt",
         new_path="/tmp/subtitles.de.srt",
         translator=Engine.OPEN_AI,
-        source=Lang.EN,
         target=Lang.DE,
     )
 )
@@ -49,7 +48,6 @@ asyncio.run(
     translate_directory(
         path="/tmp/data/shows/foo/season-01",
         translator=Engine.OPEN_AI,
-        source=Lang.EN,
         target=Lang.DE,
     )
 )
@@ -79,7 +77,6 @@ asyncio.run(
         path="/tmp/subtitles.en.srt",
         new_path="/tmp/subtitles.de.srt",
         translator=MyCustomTranslator(),
-        source=Lang.EN,
         target=Lang.DE,
     )
 )

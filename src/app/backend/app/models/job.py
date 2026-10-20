@@ -39,7 +39,8 @@ class Job(Base):
         ForeignKey("users.id", ondelete="CASCADE"), index=True
     )
     file_name: Mapped[str]
-    source_lang: Mapped[str] = mapped_column(ForeignKey("languages.code"))
+    # inferred by the model while translating, unknown until then
+    source_lang: Mapped[str | None] = mapped_column(ForeignKey("languages.code"))
     target_lang: Mapped[str] = mapped_column(ForeignKey("languages.code"))
     cue_count: Mapped[int]
     status: Mapped[JobStatus] = mapped_column(

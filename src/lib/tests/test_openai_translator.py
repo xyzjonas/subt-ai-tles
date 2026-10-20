@@ -6,7 +6,6 @@ from types import SimpleNamespace
 
 import pytest
 from pydantic import BaseModel
-
 from subtaitles import (
     Lang,
     OpenAiTranslator,
@@ -17,7 +16,6 @@ from subtaitles import (
     TranslationRequest,
     Usage,
 )
-from subtaitles.translate import add_summary
 from subtaitles.providers.openai import (
     OpenAiResponse,
     OpenAiSummary,
@@ -25,6 +23,7 @@ from subtaitles.providers.openai import (
     OpenAiVariant,
     OpenAiVariants,
 )
+from subtaitles.translate import add_summary
 
 
 def _completion(parsed: BaseModel) -> SimpleNamespace:
@@ -50,8 +49,10 @@ class FakeResponses:
                 for v in payload["variants"]
             ]
             return _completion(OpenAiVariants(variants=variants))
-        items = [OpenAiTranslation(id=i["id"], text=i["text"].upper()) for i in payload["items"]]
-        return _completion(OpenAiResponse(translations=items))
+        items = [
+            OpenAiTranslation(id=i["id"], text=i["text"].upper()) for i in payload["items"]
+        ]
+        return _completion(OpenAiResponse(source_language="en", translations=items))
 
 
 def _translator(cache: dict, responses: FakeResponses) -> OpenAiTranslator:
@@ -62,7 +63,7 @@ def _translator(cache: dict, responses: FakeResponses) -> OpenAiTranslator:
 
 def _request(count: int) -> TranslationRequest:
     segments = tuple(Segment(index=i, text=f"line {i}") for i in range(count))
-    return TranslationRequest(segments=segments, source=Lang.EN, target=Lang.DE)
+    return TranslationRequest(segments=segments, target=Lang.DE)
 
 
 @pytest.mark.asyncio
@@ -112,7 +113,7 @@ def test_organization_is_optional(monkeypatch: pytest.MonkeyPatch) -> None:
 async def test_retranslate_returns_default_variants() -> None:
     translator = _translator({}, FakeResponses())
 
-    variants = (await translator.retranslate("hello", source=Lang.EN, target=Lang.DE)).variants
+    variants = (await translator.retranslate("hello", target=Lang.DE)).variants
 
     assert [v.label for v in variants] == list(OpenAiTranslator.VARIANT_STYLES)
     assert all(v.text == "HELLO" for v in variants)
@@ -123,9 +124,7 @@ async def test_retranslate_with_prompt_returns_single_custom_variant() -> None:
     translator = _translator({}, FakeResponses())
 
     variants = (
-        await translator.retranslate(
-            "hello", source=Lang.EN, target=Lang.DE, prompt="sound like a pirate"
-        )
+        await translator.retranslate("hello", target=Lang.DE, prompt="sound like a pirate")
     ).variants
 
     assert [v.label for v in variants] == ["Custom"]
@@ -170,7 +169,7 @@ async def test_missing_usage_counts_as_zero() -> None:
 async def test_retranslate_reports_usage() -> None:
     translator = _translator({}, FakeResponses())
 
-    response = await translator.retranslate("hello", source=Lang.EN, target=Lang.DE)
+    response = await translator.retranslate("hello", target=Lang.DE)
 
     assert response.model == "test-model"
     assert response.usage == Usage(prompt_tokens=100, completion_tokens=20)
@@ -185,7 +184,7 @@ def test_temperature_is_sent_unless_unset() -> None:
 
     assert default.get_completion(list(request.segments), request)["temperature"] == 0
     assert "temperature" not in unset.get_completion(list(request.segments), request)
-    assert warm.get_completion(list(request.segments), request)["temperature"] == 0.7  # noqa: PLR2004
+    assert warm.get_completion(list(request.segments), request)["temperature"] == 0.7
 
 
 @pytest.mark.asyncio
@@ -198,12 +197,12 @@ async def test_retranslate_omits_unset_temperature() -> None:
     completions = Recording()
     translator = _translator({}, completions)
     translator.temperature = None
-    await translator.retranslate("hello", source=Lang.EN, target=Lang.DE)
+    await translator.retranslate("hello", target=Lang.DE)
     assert "temperature" not in completions.kwargs
 
     translator.temperature = 0.3
-    await translator.retranslate("hello", source=Lang.EN, target=Lang.DE)
-    assert completions.kwargs["temperature"] == 0.3  # noqa: PLR2004
+    await translator.retranslate("hello", target=Lang.DE)
+    assert completions.kwargs["temperature"] == 0.3
 
 
 @pytest.mark.asyncio
@@ -277,7 +276,9 @@ async def test_unrecognized_media_is_not_summarized() -> None:
     responses = FakeResponses()
 
     for original in (_request(2), _recognized(key=None)):
-        request, status = await add_summary(original, _translator({}, responses), MemoryStore())
+        request, status = await add_summary(
+            original, _translator({}, responses), MemoryStore()
+        )
         assert request is original
         assert status == SummaryStatus.SKIPPED
 
@@ -312,3 +313,12 @@ async def test_summarizer_failure_is_swallowed() -> None:
 
 def test_usage_subtraction() -> None:
     assert Usage(300, 60) - Usage(100, 20) == Usage(200, 40)
+
+
+@pytest.mark.asyncio
+async def test_source_language_is_inferred_by_the_model() -> None:
+    translator = _translator({}, FakeResponses())
+
+    response = await translator.translate(_request(3))
+
+    assert response.source == Lang.EN

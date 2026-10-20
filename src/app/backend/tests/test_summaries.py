@@ -7,8 +7,8 @@ from app.models import Job, JobStage, StorySummary
 from app.services import translation
 from app.services.summaries import SummaryStore
 from fastapi.testclient import TestClient
-from sqlalchemy import delete
 from mediasorter import TvShowMetadata
+from sqlalchemy import delete
 
 from tests.conftest import SUMMARY_USAGE, FakeQueue, StubTranslator
 from tests.test_api import _finish, _upload
@@ -25,7 +25,7 @@ def no_stored_briefs() -> None:
 
 @pytest.fixture
 def recognized(monkeypatch: pytest.MonkeyPatch) -> None:
-    async def lookup(_path: str) -> TvShowMetadata:
+    async def lookup(_path: str, **_kwargs: object) -> TvShowMetadata:
         return TvShowMetadata(
             series_title="The Office",
             season_id=2,

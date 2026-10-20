@@ -7,7 +7,6 @@ from pathlib import Path
 from subtaitles import Engine, Lang
 from subtaitles.cache import disk_cache
 from subtaitles.filesystem import translate_directory
-from subtaitles.language import guess_lang
 from subtaitles.task import TranslateTask, get_translate_task
 
 
@@ -17,7 +16,7 @@ def tasks_done(tasks: Iterable[TranslateTask]) -> bool:
 
 def print_task(task: TranslateTask) -> None:
     # mark = "x" if task.exception else "✓" if task.is_done else " "
-    # print(  # noqa: T201
+    # print(
     #     f"[{mark}] {task.progress.current}/{task.progress.total} {task.task_data.path} "
     #     f"-> {task.task_data.new_path} ({task.task_data.target.language.english})\033[K"
     # )
@@ -30,12 +29,10 @@ def print_tasks(tasks: Iterable[TranslateTask]) -> None:
         print_task(task)
 
 
-async def translate_dir_cmd(
-    input_path: Path, lang_from: Lang, lang_to: Lang, engine: Engine
-) -> None:
-    tasks = translate_directory(input_path, lang_from, lang_to, engine)
+async def translate_dir_cmd(input_path: Path, lang_to: Lang, engine: Engine) -> None:
+    tasks = translate_directory(input_path, lang_to, engine)
     while True:
-        # print(f"\033[{len(tasks)}A", end="")  # noqa: T201
+        # print(f"\033[{len(tasks)}A", end="")
         # print_tasks(tasks)
         await asyncio.sleep(0.5)
 
@@ -47,9 +44,9 @@ async def translate_dir_cmd(
 
 
 async def translate_single_cmd(
-    input_path: Path, new_path: Path, lang_from: Lang, lang_to: Lang, engine: Engine
+    input_path: Path, new_path: Path, lang_to: Lang, engine: Engine
 ) -> TranslateTask:
-    task = get_translate_task(input_path, new_path, lang_from, lang_to, engine)
+    task = get_translate_task(input_path, new_path, lang_to, engine)
     task.run()
     while True:
         print_task(task)
@@ -73,13 +70,10 @@ def main() -> None:
         metavar="OUTPUT_PATH",
         type=Path,
         default=None,
-        help="Path to where the resulting file will be stored, if omitted new file will be created next to the input one.",
-    )
-    parser.add_argument(
-        "--lang-from",
-        metavar="LANGUAGE_FROM",
-        type=Lang,
-        help="Language to be translated from, gets deduced from the file extension or defaults to english.",
+        help=(
+            "Path to where the resulting file will be stored, "
+            "if omitted new file will be created next to the input one."
+        ),
     )
     parser.add_argument(
         "lang_to",
@@ -108,18 +102,12 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    lang_from = args.lang_from
-    if not lang_from:
-        lang_from = guess_lang(str(args.input))
-    if not lang_from:
-        lang_from = Lang.EN
-
     if args.clear_cache:
         disk_cache.clear()
-        print("✅ Cached results cleared.")
+        print("✅ Cached results cleared.")  # noqa: T201
 
     if args.dir:
-        asyncio.run(translate_dir_cmd(args.input, lang_from, args.lang_to, args.engine))
+        asyncio.run(translate_dir_cmd(args.input, args.lang_to, args.engine))
         sys.exit(0)
 
     output = args.output
@@ -130,7 +118,6 @@ def main() -> None:
         translate_single_cmd(
             args.input,
             output,
-            lang_from,
             args.lang_to,
             args.engine,
         )

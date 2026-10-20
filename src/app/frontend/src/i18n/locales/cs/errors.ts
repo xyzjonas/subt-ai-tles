@@ -29,7 +29,6 @@ const errors: typeof en = {
     file_not_utf8: "Soubor musí být v kódování UTF-8.",
     file_invalid_srt: "Toto nevypadá jako platný soubor .srt.",
     file_empty: "Soubor neobsahuje žádné titulky.",
-    same_language: "Zdrojový a cílový jazyk se musí lišit.",
     unknown_language: "Neznámý jazyk: {language}.",
     username_taken: "Toto uživatelské jméno je již obsazené.",
     last_admin: "Vždy musí zůstat alespoň jeden aktivní správce.",

@@ -9,7 +9,7 @@ from app.schemas.base import CamelModel
 class JobOut(CamelModel):
     id: str
     file_name: str
-    source_lang: str
+    source_lang: str | None = None
     target_lang: str
     cue_count: int
     created_at: datetime

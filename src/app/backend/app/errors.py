@@ -23,7 +23,6 @@ class ErrorCode(StrEnum):
     FILE_NOT_UTF8 = "file_not_utf8"
     FILE_INVALID_SRT = "file_invalid_srt"
     FILE_EMPTY = "file_empty"
-    SAME_LANGUAGE = "same_language"
     UNKNOWN_LANGUAGE = "unknown_language"
 
     USERNAME_TAKEN = "username_taken"

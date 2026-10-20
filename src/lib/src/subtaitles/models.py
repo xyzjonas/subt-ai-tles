@@ -21,8 +21,8 @@ class Segment:
     end: timedelta | None = None
     speaker: str | None = None
 
-    def cache_key(self, source: Lang, target: Lang, model: str) -> str:
-        content = f"{self.text.strip().lower()}|{source}|{target}|{model}"
+    def cache_key(self, target: Lang, model: str) -> str:
+        content = f"{self.text.strip().lower()}|{target}|{model}"
         return hashlib.sha256(content.encode()).hexdigest()
 
 
@@ -52,7 +52,6 @@ class TranslationVariant:
 @dataclass(frozen=True)
 class TranslationRequest:
     segments: Sequence[Segment]
-    source: Lang
     target: Lang
     metadata: TitleMetadata | None = None
     # concise story brief (characters, plot, settings) shared with every batch
@@ -94,8 +93,9 @@ class Usage:
 @dataclass(frozen=True)
 class TranslationResponse:
     segments: tuple[TranslatedSegment, ...]
-    source: Lang
     target: Lang
+    # language of the original, as inferred by the translator (None when it couldn't tell)
+    source: Lang | None = None
     usage: Usage = Usage()
     model: str | None = None
 

@@ -57,30 +57,24 @@ def _ms(delta: timedelta) -> int:
     return round(delta.total_seconds() * 1000)
 
 
-def create(  # noqa: PLR0913
+def create(
     db: Session,
     user: User,
     *,
     file_name: str,
     content: bytes,
-    source_lang: str,
     target_lang: str,
 ) -> Job:
     """Store the job and its cues, and commit so a background worker can see them."""
-    if source_lang == target_lang:
-        msg = "Source and target language must differ"
-        raise InvalidInputError(ErrorCode.SAME_LANGUAGE, msg)
-    for code in (source_lang, target_lang):
-        if languages.get(db, code) is None:
-            msg = f"Unknown language: {code}"
-            raise InvalidInputError(ErrorCode.UNKNOWN_LANGUAGE, msg, language=code)
+    if languages.get(db, target_lang) is None:
+        msg = f"Unknown language: {target_lang}"
+        raise InvalidInputError(ErrorCode.UNKNOWN_LANGUAGE, msg, language=target_lang)
     usage.rate_for(db, app_settings.get(db).model)
     usage.ensure_within_quota(db, user)
     subtitles = _parse_srt(PurePath(file_name).name, content)
     job = Job(
         owner_id=user.id,
         file_name=PurePath(file_name).name,
-        source_lang=source_lang,
         target_lang=target_lang,
         cue_count=len(subtitles),
     )

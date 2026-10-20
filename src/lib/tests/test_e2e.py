@@ -1,8 +1,7 @@
 from pathlib import Path
 
 import pytest
-
-from subtaitles import Lang, Engine
+from subtaitles import Engine, Lang
 from subtaitles.cli import translate_single_cmd
 
 
@@ -13,7 +12,6 @@ async def test_translate_e2e(data):
         # data / "rick-and-morty-S01E01.en.srt",
         Path("/home/jonas/Videos/series/House/Season 01/House S01E01 - Pilot.srt"),
         data.parent,
-        Lang.EN,
         Lang.CS,
         Engine.OPEN_AI,
     )

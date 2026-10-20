@@ -13,30 +13,21 @@ export function useTranslateForm() {
   const srt = useSrtFile();
 
   const languages = ref<Language[]>([]);
-  const sourceCode = ref("en");
   const targetCode = ref(localStorage.getItem(TARGET_KEY) ?? "en");
   const estimate = ref<JobEstimate | null>(null);
   const submitting = ref(false);
   const submitError = ref("");
 
   const byCode = (code: string) => languages.value.find((l) => l.code === code);
-  const source = computed(() => byCode(sourceCode.value));
   const target = computed(() => byCode(targetCode.value));
-  const canSubmit = computed(() => srt.hasFile.value && !!target.value && sourceCode.value !== targetCode.value && !submitting.value);
+  const canSubmit = computed(() => srt.hasFile.value && !!target.value && !submitting.value);
 
   onMounted(async () => {
     languages.value = await listLanguages();
     if (!byCode(targetCode.value)) targetCode.value = "en";
   });
 
-
-  watch(srt.detectedLang, (code) => {
-    if (!code) return;
-    sourceCode.value = code;
-    if (targetCode.value === code) targetCode.value = languages.value.find((l) => l.code !== code)?.code ?? targetCode.value;
-  });
-
-  /** User-driven change: persisted, unlike the automatic switch on language detection. */
+  /** User-driven change, persisted for the next visit. */
   function setTarget(code: string) {
     targetCode.value = code;
     localStorage.setItem(TARGET_KEY, code);
@@ -53,7 +44,6 @@ export function useTranslateForm() {
     try {
       const { id } = await createJob({
         file: srt.file.value,
-        sourceLang: sourceCode.value,
         targetLang: targetCode.value,
       });
       await router.push({ name: "job", params: { id } });
@@ -64,5 +54,5 @@ export function useTranslateForm() {
     }
   }
 
-  return { srt, languages, source, target, sourceCode, targetCode, estimate, submitting, submitError, canSubmit, setTarget, submit };
+  return { srt, languages, target, targetCode, estimate, submitting, submitError, canSubmit, setTarget, submit };
 }

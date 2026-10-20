@@ -5,9 +5,9 @@ from random import randint
 from unittest import mock
 
 import pytest
-
 from subtaitles import Engine, Lang
 from subtaitles.translate import translate_srt_file
+
 from tests.utils import MockedTranslator
 
 
@@ -21,9 +21,7 @@ async def test_translate_srt_file(data: Path) -> None:
         with mock.patch(
             "subtaitles.translate.get_translator", return_value=MockedTranslator()
         ):
-            output_path = await translate_srt_file(
-                input_path, Lang.EN, Lang.EN, Engine.OPEN_AI, output
-            )
+            output_path = await translate_srt_file(input_path, Lang.EN, Engine.OPEN_AI, output)
 
         assert output == output_path
         assert output.exists()

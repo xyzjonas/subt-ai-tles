@@ -17,10 +17,9 @@ export function estimateJob(cueCount: number): Promise<JobEstimate> {
 }
 
 /** POST /api/jobs (multipart) -> 201 the created job */
-export function createJob({ file, sourceLang, targetLang }: CreateJobPayload): Promise<Job> {
+export function createJob({ file, targetLang }: CreateJobPayload): Promise<Job> {
   const form = new FormData();
   form.append("file", file);
-  form.append("sourceLang", sourceLang);
   form.append("targetLang", targetLang);
   return requestJson("/jobs", { method: "POST", body: form });
 }

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 import type { Job } from "../../api/types";
+import { languageCode } from "../../utils/language";
 import { timeAgo } from "../../utils/srt";
 import AppIcon from "../ui/AppIcon.vue";
 import StatusBadge from "../ui/StatusBadge.vue";
@@ -17,7 +18,7 @@ const { t } = useI18n();
       <span class="name mono">{{ job.fileName }}</span>
       <span class="meta">
         <span class="langs">
-          {{ job.sourceLang.toUpperCase() }} <AppIcon name="arrow" :size="12" /> {{ job.targetLang.toUpperCase() }}
+          {{ languageCode(job.sourceLang) }} <AppIcon name="arrow" :size="12" /> {{ job.targetLang.toUpperCase() }}
         </span>
         • {{ t("cues", { count: job.cueCount }, job.cueCount) }} • {{ timeAgo(job.createdAt) }}
       </span>

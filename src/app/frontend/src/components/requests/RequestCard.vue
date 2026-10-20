@@ -3,7 +3,7 @@ import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { downloadJob } from "../../api/jobs";
 import type { Job } from "../../api/types";
-import { displayLanguage } from "../../utils/language";
+import { displayLanguage, languageCode } from "../../utils/language";
 import { stageLabel } from "../../utils/stage";
 import { downloadBlob, formatWhen, timeAgo, translatedFileName } from "../../utils/srt";
 import AppIcon from "../ui/AppIcon.vue";
@@ -39,7 +39,7 @@ async function download() {
 
     <p class="route">
       <span class="lang-pill">
-        {{ job.sourceLang.toUpperCase() }} <AppIcon name="arrow" :size="12" /> {{ job.targetLang.toUpperCase() }} ({{ lang(job.targetLang) }})
+        {{ languageCode(job.sourceLang) }} <AppIcon name="arrow" :size="12" /> {{ job.targetLang.toUpperCase() }} ({{ lang(job.targetLang) }})
       </span>
     </p>
 

@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import pytest
-
 from subtaitles import Lang
 from subtaitles.providers import OpenAiTranslator
 

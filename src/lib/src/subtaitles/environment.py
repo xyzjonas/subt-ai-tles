@@ -30,6 +30,7 @@ class EnvVars:
     OPENAI_MODEL = EnvVar("OPENAI_MODEL", "gpt-5-nano")
     LIBRETRANSLATE_API_URL = EnvVar("LIBRETRANSLATE_API_URL")
     CACHE_DIR = EnvVar("SRT_CACHE_DIR")
+    TMDB_API_KEY = EnvVar("TMDB_API_KEY")
 
 
 env = EnvVars()

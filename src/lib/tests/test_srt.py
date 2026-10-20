@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import srt
-
 from subtaitles.srt import strip_srt_markup
 
 

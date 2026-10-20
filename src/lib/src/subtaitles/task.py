@@ -18,7 +18,6 @@ if TYPE_CHECKING:
 @dataclass
 class TranslateTaskData:
     path: Path
-    source: Lang
     target: Lang
     new_path: Path
 
@@ -46,7 +45,6 @@ class TranslateTask:
                 path=self.task_data.path,
                 new_path=self.task_data.new_path,
                 translator=self.translator,
-                source=self.task_data.source,
                 target=self.task_data.target,
                 progress=self.progress,
             )
@@ -67,7 +65,6 @@ class TranslateTask:
 def get_translate_task(
     path: Path | str,
     new_path: Path | str,
-    source: Lang,
     target: Lang,
     translator: Engine | TranslateProtocol,
 ) -> TranslateTask:
@@ -84,7 +81,6 @@ def get_translate_task(
         task_data=TranslateTaskData(
             path=path,
             new_path=new_path,
-            source=source,
             target=target,
         ),
         translator=translator,

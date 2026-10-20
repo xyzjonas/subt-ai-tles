@@ -4,6 +4,7 @@ from itertools import chain
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from .language import find_lang
 from .task import TranslateTask, TranslateTaskData
 
 if TYPE_CHECKING:
@@ -36,20 +37,20 @@ def is_already_translated(path: str | Path, lang: Lang) -> bool:
     return False
 
 
-def get_new_language_file_path(path: str | Path, lang_from: Lang, lang_to: Lang) -> Path:
+def get_new_language_file_path(path: str | Path, lang_to: Lang) -> Path:
     path = Path(path)
     without_suffix = str(path.name).removesuffix(path.suffix)
     split = without_suffix.rsplit(".", 1)
     if len(split) == 2:  # noqa: PLR2004
         maybe_lang_identifier = split[1]
-        if maybe_lang_identifier in [*lang_from.language.aliases, lang_from.language.iso]:
+        if find_lang(maybe_lang_identifier):
             return path.parent / f"{split[0]}.{lang_to.language.iso}{path.suffix}"
 
     return path.parent / f"{without_suffix}.{lang_to.language.iso}{path.suffix}"
 
 
 def get_translate_tasks(
-    path: Path | str, source: Lang, target: Lang, translator: Engine | TranslateProtocol
+    path: Path | str, target: Lang, translator: Engine | TranslateProtocol
 ) -> list[TranslateTask]:
     path_to_dir = Path(path)
     if not path_to_dir.is_dir():
@@ -59,9 +60,8 @@ def get_translate_tasks(
     tasks = [
         TranslateTaskData(
             path=srt_file,
-            source=source,
             target=target,
-            new_path=get_new_language_file_path(srt_file, lang_from=source, lang_to=target),
+            new_path=get_new_language_file_path(srt_file, lang_to=target),
         )
         for srt_file in find_srt_files(path_to_dir)
         if not is_already_translated(srt_file, lang=target)
@@ -85,7 +85,6 @@ def get_translate_tasks(
 
 def translate_directory(
     path: Path | str,
-    source: Lang,
     target: Lang,
     translator: Engine | TranslateProtocol,
 ) -> list[TranslateTask]:
@@ -94,7 +93,7 @@ def translate_directory(
         msg = "Supplied path is NOT a directory"
         raise FileNotFoundError(msg)
 
-    tasks = get_translate_tasks(path, source, target, translator)
+    tasks = get_translate_tasks(path, target, translator)
     for task in tasks:
         task.run()
 

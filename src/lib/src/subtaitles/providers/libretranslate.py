@@ -26,7 +26,7 @@ class LibreTranslateTranslator:
         text = [seg.text for seg in request.segments]
         result = self.client.translate(
             DELIMITER.join(text),
-            source=request.source.language.iso,
+            source="auto",
             target=request.target.language.iso,
         )
         translations = result.split(DELIMITER)
@@ -41,6 +41,5 @@ class LibreTranslateTranslator:
         )
         return TranslationResponse(
             segments=segments,
-            source=request.source,
             target=request.target,
         )

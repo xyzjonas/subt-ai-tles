@@ -28,7 +28,7 @@ export function useRequests() {
     const q = query.value.trim().toLowerCase();
     return jobs.value
       .filter((j) => inTab(j, tab.value))
-      .filter((j) => !q || [j.fileName, j.sourceLang, j.targetLang, timeAgo(j.createdAt), formatWhen(j.createdAt)].some((f) => f.toLowerCase().includes(q)));
+      .filter((j) => !q || [j.fileName, j.sourceLang ?? "", j.targetLang, timeAgo(j.createdAt), formatWhen(j.createdAt)].some((f) => f.toLowerCase().includes(q)));
   });
 
   return { jobs, query, tab, loading, counts, visible };
