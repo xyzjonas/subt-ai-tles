@@ -61,7 +61,7 @@ docker-build:
 
 # Run web (nginx + API), worker and redis.
 up:
-  docker compose up --build
+  docker compose up -d --build
 
 # Run the Celery worker locally (needs redis: `docker compose up redis`).
 worker:

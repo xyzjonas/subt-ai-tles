@@ -51,10 +51,18 @@ def make_user(client: TestClient):
     def _make(username: str, *, admin: bool = False) -> tuple[str, str]:
         r = client.post(
             "/api/admin/users",
-            json={"username": username, "password": "password123", "isAdmin": admin},
+            json={"username": username, "password": "temporary-1", "isAdmin": admin},
             auth=ADMIN,
         )
         assert r.status_code in (201, 409), r.text
+        if r.status_code == 201:
+            # First login: replace the temporary password.
+            changed = client.post(
+                "/api/auth/password",
+                json={"currentPassword": "temporary-1", "newPassword": "password123"},
+                auth=(username, "temporary-1"),
+            )
+            assert changed.status_code == 204, changed.text
         return username, "password123"
 
     return _make
@@ -101,7 +109,8 @@ class StubTranslator:
             variants = [TranslationVariant("Custom", f"[custom] {text}")]
         else:
             variants = [
-                TranslationVariant(label, f"[{label}] {text}") for label in ("Literal", "Shorter")
+                TranslationVariant(label, f"[{label}] {text}")
+                for label in ("Literal", "Shorter")
             ]
         return RetranslationResponse(variants, used, self.model)
 

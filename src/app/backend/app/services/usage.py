@@ -7,7 +7,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 from subtaitles import Usage  # type: ignore[import-untyped]
 
-from app.errors import InvalidInputError, QuotaExceededError
+from app.errors import ErrorCode, InvalidInputError, QuotaExceededError
 from app.models import ModelRate, UsageKind, UsageRecord, User
 from app.schemas import ModelRateIn, QuotaOut, UsageBucket, UsageSummary
 
@@ -45,7 +45,7 @@ def rate_for(db: Session, model: str) -> ModelRate:
     rate = db.get(ModelRate, model)
     if rate is None:
         msg = f"Model {model} is not offered"
-        raise InvalidInputError(msg)
+        raise InvalidInputError(ErrorCode.MODEL_NOT_OFFERED, msg, model=model)
     return rate
 
 
@@ -115,7 +115,7 @@ def quota(db: Session, user: User) -> QuotaOut:
 def ensure_within_quota(db: Session, user: User) -> None:
     if used_this_month(db, user) >= user.monthly_quota:
         msg = "Monthly quota exceeded"
-        raise QuotaExceededError(msg)
+        raise QuotaExceededError(ErrorCode.QUOTA_EXCEEDED, msg)
 
 
 def _buckets(

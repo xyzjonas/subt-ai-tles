@@ -3,7 +3,7 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.errors import InvalidInputError
+from app.errors import ErrorCode, InvalidInputError
 from app.models import (
     DEFAULT_MODEL,
     DEFAULT_TEMPERATURE,
@@ -34,7 +34,7 @@ def effective_temperature(settings: AppSettings) -> float | None:
 def update(db: Session, data: AppSettingsIn) -> AppSettings:
     if db.get(ModelRate, data.model) is None:
         msg = f"Model {data.model} has no credit rate yet"
-        raise InvalidInputError(msg)
+        raise InvalidInputError(ErrorCode.MODEL_WITHOUT_RATE, msg, model=data.model)
     settings = get(db)
     settings.model = data.model
     settings.temperature = data.temperature

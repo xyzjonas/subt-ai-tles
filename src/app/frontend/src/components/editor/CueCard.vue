@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, useTemplateRef } from "vue";
+import { useI18n } from "vue-i18n";
 import type { CueVariant } from "../../api/types";
 import { CPS_LIMIT, type EditorCue } from "../../composables/useCueEditor";
 import { cps, formatTimecode, timeAgo } from "../../utils/srt";
 import AppIcon from "../ui/AppIcon.vue";
+import ErrorBanner from "../ui/ErrorBanner.vue";
 import StatusBadge from "../ui/StatusBadge.vue";
 import VariantPicker from "./VariantPicker.vue";
 
@@ -14,7 +16,11 @@ const props = defineProps<{
   variants?: CueVariant[];
   status?: "loading" | "error";
   saving?: "saving" | "error";
+  /** Localized reason shown when retranslating or saving failed. */
+  problem?: string;
 }>();
+
+const { t, locale } = useI18n();
 const emit = defineEmits<{
   retranslate: [prompt?: string];
   propose: [text: string];
@@ -33,7 +39,10 @@ const activeOption = computed(
     (props.variants?.findIndex((v) => v.text === shown.value) ?? -1) + 1,
 );
 const duration = computed(() =>
-  ((props.cue.end - props.cue.start) / 1000).toFixed(1),
+  ((props.cue.end - props.cue.start) / 1000).toLocaleString(locale.value, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  }),
 );
 const fast = computed(() => cps(props.cue) > CPS_LIMIT);
 const index = computed(() => String(props.cue.index).padStart(3, "0"));
@@ -65,19 +74,19 @@ function save() {
         {{ formatTimecode(cue.end) }}
       </p>
       <StatusBadge v-if="expanded && activeOption" tone="primary"
-        >Option {{ activeOption }} Active</StatusBadge
+        >{{ t("editor.cue.optionActive", { n: activeOption }) }}</StatusBadge
       >
       <StatusBadge v-else-if="cue.modifiedAt" tone="success"
-        >Modified</StatusBadge
+        >{{ t("editor.cue.modified") }}</StatusBadge
       >
-      <StatusBadge v-if="fast" tone="warning">High CPS</StatusBadge>
-      <span class="duration mono">{{ duration }}s</span>
+      <StatusBadge v-if="fast" tone="warning">{{ t("editor.cue.highCps") }}</StatusBadge>
+      <span class="duration mono">{{ t("time.seconds", { n: duration }) }}</span>
     </header>
 
     <div class="texts">
       <section class="block">
         <h3 class="section-label">
-          <span class="dot" /> {{ sourceLang.toUpperCase() }} (SOURCE)
+          <span class="dot" /> {{ t("editor.cue.source", { lang: sourceLang.toUpperCase() }) }}
         </h3>
         <p class="source">{{ cue.source }}</p>
       </section>
@@ -85,9 +94,9 @@ function save() {
       <section class="block target">
         <h3 class="section-label">
           <span class="dot target-dot" />
-          {{ targetLang.toUpperCase() }} (TARGET)
+          {{ t("editor.cue.target", { lang: targetLang.toUpperCase() }) }}
           <span class="tag">{{
-            pending ? "Unsaved" : cue.modifiedAt ? "Edited" : "Auto-tuned"
+            pending ? t("editor.cue.unsaved") : cue.modifiedAt ? t("editor.cue.edited") : t("editor.cue.autoTuned")
           }}</span>
         </h3>
         <textarea
@@ -96,7 +105,7 @@ function save() {
           v-model="draft"
           rows="2"
           :lang="targetLang"
-          aria-label="Edit translation"
+          :aria-label="t('editor.cue.editLabel')"
           @blur="save"
           @keydown.esc.prevent="editing = false"
         />
@@ -112,19 +121,18 @@ function save() {
       @pick="emit('propose', $event)"
       @run="emit('retranslate', $event)"
     />
-    <p v-if="status === 'error'" class="error" role="alert">
-      Couldn't fetch alternatives. Try again.
-    </p>
-    <p v-if="saving === 'error'" class="error" role="alert">
-      Couldn't save this line. Try again.
-    </p>
+    <ErrorBanner
+      v-if="status === 'error' || saving === 'error'"
+      :title="t(status === 'error' ? 'editor.cue.alternativesFailed' : 'editor.cue.saveFailed')"
+      :message="problem ?? t('errors.unknown')"
+    />
 
     <footer class="foot">
       <button v-if="!expanded" type="button" @click="emit('retranslate')">
-        <AppIcon name="retry" :size="14" /> Re-translate
+        <AppIcon name="retry" :size="14" /> {{ t("editor.cue.retranslate") }}
       </button>
       <button v-else type="button" @click="emit('dismiss')">
-        <AppIcon name="close" :size="14" /> Close
+        <AppIcon name="close" :size="14" /> {{ t("editor.cue.close") }}
       </button>
       <button
         v-if="editing"
@@ -133,11 +141,11 @@ function save() {
         @mousedown.prevent
         @click="save"
       >
-        <AppIcon name="check" :size="14" /> Done
+        <AppIcon name="check" :size="14" /> {{ t("editor.cue.done") }}
       </button>
       <button v-else type="button" @click="edit">
         <AppIcon name="edit" :size="14" />
-        {{ expanded ? "Manual Edit" : "Edit" }}
+        {{ expanded ? t("editor.cue.manualEdit") : t("editor.cue.edit") }}
       </button>
       <button
         v-if="pending"
@@ -147,7 +155,7 @@ function save() {
         @click="emit('accept')"
       >
         <AppIcon name="check" :size="14" />
-        {{ saving === "saving" ? "Saving…" : "Accept" }}
+        {{ saving === "saving" ? t("editor.cue.saving") : t("editor.cue.accept") }}
       </button>
       <button
         v-if="pending"
@@ -155,21 +163,22 @@ function save() {
         :disabled="saving === 'saving'"
         @click="emit('discard')"
       >
-        <AppIcon name="close" :size="14" /> Discard
+        <AppIcon name="close" :size="14" /> {{ t("editor.cue.discard") }}
       </button>
       <button
         type="button"
         class="flag"
         :class="{ on: cue.flagged }"
         :aria-pressed="cue.flagged"
-        :aria-label="cue.flagged ? 'Remove flag' : 'Flag cue'"
+        :aria-label="cue.flagged ? t('editor.cue.unflag') : t('editor.cue.flag')"
         @click="emit('flag')"
       >
         <AppIcon name="flag" :size="14" />
       </button>
       <span v-if="expanded && cue.modifiedAt" class="ago"
-        >Re-translated
-        {{ timeAgo(new Date(cue.modifiedAt).toISOString()) }}</span
+        >{{
+          t("editor.cue.retranslated", { ago: timeAgo(new Date(cue.modifiedAt).toISOString()) })
+        }}</span
       >
     </footer>
   </article>
@@ -294,11 +303,6 @@ textarea {
 
 .target:focus-within {
   outline: 2px solid var(--primary);
-}
-
-.error {
-  font-size: 12px;
-  color: var(--danger);
 }
 
 .foot {

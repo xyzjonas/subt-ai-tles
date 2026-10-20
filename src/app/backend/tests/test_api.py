@@ -128,7 +128,9 @@ def test_cancel_requires_processing(
     assert client.delete(f"/api/jobs/{job['id']}/translation", auth=dave).status_code == 409
 
 
-def test_run_job_is_idempotent(client: TestClient, make_user: Callable, queue: FakeQueue) -> None:
+def test_run_job_is_idempotent(
+    client: TestClient, make_user: Callable, queue: FakeQueue
+) -> None:
     gina = make_user("gina")
     job = _upload(client, gina)
     _finish(client, queue, gina, job["id"])
@@ -150,16 +152,17 @@ def test_failed_job_reports_error(
     job = _upload(client, hana)
     failed = _finish(client, queue, hana, job["id"])
     assert failed["status"] == "failed"
-    assert failed["error"] == "Translation failed (RuntimeError)"
-    assert "secret" not in failed["error"]
+    assert failed["error"] == "translation_failed"
 
 
-def test_enqueue_failure_fails_job(client: TestClient, make_user: Callable, queue: FakeQueue) -> None:
+def test_enqueue_failure_fails_job(
+    client: TestClient, make_user: Callable, queue: FakeQueue
+) -> None:
     queue.fail = True
     ivan = make_user("ivan")
     job = _upload(client, ivan)
     assert job["status"] == "failed"
-    assert job["error"] == "The translation could not be queued"
+    assert job["error"] == "translation_queue_failed"
 
 
 def test_retranslate_failure_is_bad_gateway(
@@ -262,3 +265,108 @@ def test_estimate_and_detect(client: TestClient) -> None:
         "/api/subtitles/detect-language", files={"file": ("a.srt", SRT.encode())}, auth=ADMIN
     )
     assert r.json() == {"code": "en"}
+
+
+def test_temporary_password_must_be_changed_on_first_login(client: TestClient) -> None:
+    r = client.post(
+        "/api/admin/users",
+        json={"username": "tina", "password": "temporary-1"},
+        auth=ADMIN,
+    )
+    assert r.json()["mustChangePassword"] is True
+    tina = ("tina", "temporary-1")
+
+    # Only /auth/me and the password change work until it is replaced.
+    assert client.get("/api/auth/me", auth=tina).json()["mustChangePassword"] is True
+    blocked = client.get("/api/usage", auth=tina)
+    assert blocked.status_code == 403
+    assert blocked.json()["detail"] == "Password change required"
+    assert blocked.json()["code"] == "password_change_required"
+    assert client.get("/api/languages", auth=tina).status_code == 403
+
+    change = "/api/auth/password"
+    wrong = client.post(
+        change, json={"currentPassword": "x", "newPassword": "new-password"}, auth=tina
+    )
+    assert wrong.status_code == 422
+    same = client.post(
+        change,
+        json={"currentPassword": "temporary-1", "newPassword": "temporary-1"},
+        auth=tina,
+    )
+    assert same.status_code == 422
+    ok = client.post(
+        change,
+        json={"currentPassword": "temporary-1", "newPassword": "new-password"},
+        auth=tina,
+    )
+    assert ok.status_code == 204
+
+    tina = ("tina", "new-password")
+    assert client.get("/api/auth/me", auth=tina).json()["mustChangePassword"] is False
+    assert client.get("/api/usage", auth=tina).status_code == 200
+    assert client.get("/api/auth/me", auth=("tina", "temporary-1")).status_code == 401
+
+
+def test_admin_password_reset_is_temporary_except_for_self(
+    client: TestClient, make_user: Callable
+) -> None:
+    uma = make_user("uma")
+    uma_id = client.get("/api/auth/me", auth=uma).json()["id"]
+    admin_id = client.get("/api/auth/me", auth=ADMIN).json()["id"]
+
+    r = client.patch(
+        f"/api/admin/users/{uma_id}", json={"password": "reset-12345"}, auth=ADMIN
+    )
+    assert r.json()["mustChangePassword"] is True
+    assert client.get("/api/usage", auth=("uma", "reset-12345")).status_code == 403
+
+    r = client.patch(f"/api/admin/users/{admin_id}", json={"password": ADMIN[1]}, auth=ADMIN)
+    assert r.json()["mustChangePassword"] is False
+    assert client.get("/api/usage", auth=ADMIN).status_code == 200
+
+
+def test_admin_sees_any_users_usage_and_quota(client: TestClient, make_user: Callable) -> None:
+    vic = make_user("vic")
+    vic_id = client.get("/api/auth/me", auth=vic).json()["id"]
+    admin_id = client.get("/api/auth/me", auth=ADMIN).json()["id"]
+
+    assert client.get(f"/api/admin/users/{vic_id}/usage", auth=vic).status_code == 403
+    assert client.get(f"/api/admin/users/{vic_id}/usage/records", auth=vic).status_code == 403
+    summary = client.get(f"/api/admin/users/{vic_id}/usage", auth=ADMIN)
+    assert summary.status_code == 200
+    assert summary.json()["quota"]["used"] == 0
+    assert client.get(f"/api/admin/users/{vic_id}/usage/records", auth=ADMIN).json() == []
+    assert client.get("/api/admin/users/99999/usage", auth=ADMIN).status_code == 404
+
+    # An admin can change their own quota too.
+    r = client.patch(f"/api/admin/users/{admin_id}", json={"monthlyQuota": 1234}, auth=ADMIN)
+    assert r.json()["monthlyQuota"] == 1234
+    assert (
+        client.get(f"/api/admin/users/{admin_id}/usage", auth=ADMIN).json()["quota"]["limit"]
+        == 1234
+    )
+
+
+def test_user_locale(client: TestClient) -> None:
+    assert client.get("/api/auth/me", auth=ADMIN).json()["locale"] is None
+
+    # An admin can choose it upfront; the user can change or clear it later.
+    created = client.post(
+        "/api/admin/users",
+        json={"username": "lenka", "password": "temporary-1", "locale": "cs"},
+        auth=ADMIN,
+    )
+    assert created.json()["locale"] == "cs"
+    lenka = ("lenka", "temporary-1")
+    assert client.get("/api/auth/me", auth=lenka).json()["locale"] == "cs"
+
+    changed = client.patch("/api/auth/me", json={"locale": "en"}, auth=lenka)
+    assert changed.json()["locale"] == "en"
+    cleared = client.patch("/api/auth/me", json={"locale": None}, auth=lenka)
+    assert cleared.json()["locale"] is None
+    assert client.patch("/api/auth/me", json={"locale": "xx"}, auth=lenka).status_code == 422
+    listed = {
+        u["username"]: u["locale"] for u in client.get("/api/admin/users", auth=ADMIN).json()
+    }
+    assert listed["lenka"] is None

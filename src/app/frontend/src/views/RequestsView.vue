@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
 import RequestCard from "../components/requests/RequestCard.vue";
 import RequestSearch from "../components/requests/RequestSearch.vue";
 import StatusTabs from "../components/requests/StatusTabs.vue";
 import { useRequests } from "../composables/useRequests";
 
+const { t } = useI18n();
 const { jobs, query, tab, loading, counts, visible } = useRequests();
 </script>
 
@@ -11,17 +13,17 @@ const { jobs, query, tab, loading, counts, visible } = useRequests();
   <section class="requests">
     <header class="head">
       <div class="title">
-        <h1>Translation history</h1>
-        <span class="count">● {{ jobs.length }} {{ jobs.length === 1 ? "task" : "tasks" }}</span>
+        <h1>{{ t("requests.title") }}</h1>
+        <span class="count">● {{ t("requests.tasks", { count: jobs.length }, jobs.length) }}</span>
       </div>
-      <p>Review, track, and export active subtitle jobs.</p>
+      <p>{{ t("requests.lead") }}</p>
     </header>
 
     <RequestSearch v-model="query" />
     <StatusTabs v-model="tab" :counts="counts" />
 
-    <p v-if="loading" class="empty" role="status">Loading…</p>
-    <p v-else-if="!visible.length" class="empty">No {{ tab }} requests{{ query ? " match your search" : "" }}.</p>
+    <p v-if="loading" class="empty" role="status">{{ t("loading") }}</p>
+    <p v-else-if="!visible.length" class="empty">{{ t(`requests.empty.${tab}${query ? "Search" : ""}`) }}</p>
     <ul v-else class="list">
       <li v-for="job in visible" :key="job.id"><RequestCard :job="job" /></li>
     </ul>

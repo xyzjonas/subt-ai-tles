@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
+import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 import CueCard from "../components/editor/CueCard.vue";
 import CueFilters from "../components/editor/CueFilters.vue";
@@ -7,11 +8,13 @@ import CueSearch from "../components/editor/CueSearch.vue";
 import EditorActionBar from "../components/editor/EditorActionBar.vue";
 import EditorSummary from "../components/editor/EditorSummary.vue";
 import AppIcon from "../components/ui/AppIcon.vue";
+import ErrorBanner from "../components/ui/ErrorBanner.vue";
 import { useCueEditor } from "../composables/useCueEditor";
 import { compileSrt, downloadBlob, srtBlob, translatedFileName } from "../utils/srt";
 
+const { t, n } = useI18n();
 const route = useRoute();
-const { job, cues, loading, error, query, filter, counts, visible, remaining, runningTime, variants, status, saving, pending, load, propose, accept, discard, retranslate, dismiss, toggleFlag, showMore } =
+const { job, cues, loading, error, query, filter, counts, visible, remaining, runningTime, variants, status, saving, problems, pending, load, propose, accept, discard, retranslate, dismiss, toggleFlag, showMore } =
   useCueEditor(computed(() => String(route.params.id)));
 
 const canShare = "share" in navigator;
@@ -34,24 +37,26 @@ function share() {
 }
 
 function sync() {
-  if (pending.value && !confirm("Re-syncing reloads all lines and discards changes you haven't accepted. Continue?")) return;
+  if (pending.value && !confirm(t("editor.confirmResync"))) return;
   load();
 }
 </script>
 
 <template>
-  <p v-if="loading && !job" class="state" role="status">Loading…</p>
-  <p v-else-if="error" class="state" role="alert">{{ error }} <button type="button" @click="load">Retry</button></p>
+  <p v-if="loading && !job" class="state" role="status">{{ t("loading") }}</p>
+  <ErrorBanner v-else-if="error" :title="t('errors.title')" :message="error">
+    <button type="button" class="retry" @click="load">{{ t("retry") }}</button>
+  </ErrorBanner>
 
   <section v-else-if="job" class="editor">
-    <RouterLink to="/requests" class="back"><AppIcon name="back" :size="14" /> Back to My Requests</RouterLink>
+    <RouterLink to="/requests" class="back"><AppIcon name="back" :size="14" /> {{ t("editor.back") }}</RouterLink>
 
     <EditorSummary :job="job" :lines="cues.length" :running-time="runningTime" :copied="copied" :can-share="canShare" @download="download" @copy="copy" @share="share" />
 
     <CueSearch v-model="query" />
     <CueFilters v-model="filter" :counts="counts" />
 
-    <p v-if="!visible.length" class="state">No lines match.</p>
+    <p v-if="!visible.length" class="state">{{ t("editor.noMatch") }}</p>
     <ul v-else class="cues">
       <li v-for="cue in visible" :key="cue.index">
         <CueCard
@@ -61,6 +66,7 @@ function sync() {
           :variants="variants[cue.index]"
           :status="status[cue.index]"
           :saving="saving[cue.index]"
+          :problem="problems[cue.index]"
           @retranslate="retranslate(cue, $event)"
           @propose="propose(cue, $event)"
           @accept="accept(cue)"
@@ -70,7 +76,7 @@ function sync() {
         />
       </li>
     </ul>
-    <button v-if="remaining > 0" type="button" class="more" @click="showMore">Show more ({{ remaining.toLocaleString() }} left)</button>
+    <button v-if="remaining > 0" type="button" class="more" @click="showMore">{{ t("editor.showMore", { count: n(remaining) }) }}</button>
 
     <EditorActionBar :syncing="loading" @download="download" @sync="sync" />
   </section>
@@ -103,7 +109,7 @@ function sync() {
   color: var(--text-muted);
 }
 
-.state button,
+.retry,
 .more {
   height: 36px;
   padding: 0 16px;

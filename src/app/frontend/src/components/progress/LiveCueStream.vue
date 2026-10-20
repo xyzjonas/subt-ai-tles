@@ -1,26 +1,32 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { useI18n } from "vue-i18n";
 import type { Cue } from "../../api/types";
 import { formatTimecode } from "../../utils/srt";
 import AppIcon from "../ui/AppIcon.vue";
 
 const props = defineProps<{ cue?: Cue }>();
+const { t, locale } = useI18n();
 
-const duration = computed(() => props.cue && ((props.cue.end - props.cue.start) / 1000).toFixed(2));
+const duration = computed(
+  () =>
+    props.cue &&
+    ((props.cue.end - props.cue.start) / 1000).toLocaleString(locale.value, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+);
 </script>
 
 <template>
   <section class="card" aria-labelledby="stream-title">
     <header class="head">
-      <h2 id="stream-title"><AppIcon name="terminal" :size="16" /> Live Stream Streamer</h2>
-      <span v-if="cue" class="badge mono">Cue #{{ cue.index }}</span>
+      <h2 id="stream-title"><AppIcon name="terminal" :size="16" /> {{ t("progress.stream.title") }}</h2>
+      <span v-if="cue" class="badge mono">{{ t("progress.stream.cue", { index: cue.index }) }}</span>
     </header>
 
-    <p v-if="!cue" class="empty">Waiting for the first translated line…</p>
+    <p v-if="!cue" class="empty">{{ t("progress.stream.waiting") }}</p>
     <div v-else class="cue" aria-live="polite">
       <p class="time mono">
         <time>{{ formatTimecode(cue.start) }}</time> ➔ <time>{{ formatTimecode(cue.end) }}</time>
-        <span>{{ duration }}s duration</span>
+        <span>{{ t("progress.stream.duration", { seconds: duration }) }}</span>
       </p>
       <p class="src"><small class="mono">SRC</small> <q>{{ cue.source }}</q></p>
       <p v-if="cue.target" class="tgt"><small class="mono">TGT</small> <span>{{ cue.target }}<span class="cursor" aria-hidden="true">█</span></span></p>

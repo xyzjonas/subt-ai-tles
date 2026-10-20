@@ -1,28 +1,31 @@
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
 import type { Job } from "../../api/types";
+import { displayLanguage } from "../../utils/language";
 import { timeAgo } from "../../utils/srt";
 import AppIcon from "../ui/AppIcon.vue";
 import StatusBadge from "../ui/StatusBadge.vue";
 
 defineProps<{ job: Job }>();
 
-const lang = (code: string) => new Intl.DisplayNames("en", { type: "language" }).of(code) ?? code;
+const { t, locale } = useI18n();
+const lang = (code: string) => displayLanguage(code, locale.value) ?? code;
 </script>
 
 <template>
-  <section class="card" aria-label="Job overview">
+  <section class="card" :aria-label="t('progress.overview.label')">
     <header class="head">
       <span class="icon"><AppIcon name="file" :size="18" /></span>
       <h2 class="name mono">{{ job.fileName }}</h2>
-      <StatusBadge tone="success" dot pulse>Live</StatusBadge>
+      <StatusBadge tone="success" dot pulse>{{ t("progress.overview.live") }}</StatusBadge>
     </header>
-    <p class="specs mono">SubRip (.srt) • UTF-8 • Submitted {{ timeAgo(job.createdAt) }}</p>
+    <p class="specs mono">{{ t("progress.overview.specs", { ago: timeAgo(job.createdAt) }) }}</p>
 
     <p class="route">
       <span class="lang"><b>{{ job.sourceLang.toUpperCase() }}</b> {{ lang(job.sourceLang) }}</span>
       <AppIcon name="arrow" :size="14" />
       <span class="lang"><b>{{ job.targetLang.toUpperCase() }}</b> {{ lang(job.targetLang) }}</span>
-      <span class="cues mono">{{ job.cueCount }} cues</span>
+      <span class="cues mono">{{ t("cues", { count: job.cueCount }, job.cueCount) }}</span>
     </p>
   </section>
 </template>

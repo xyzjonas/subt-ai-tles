@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { useI18n } from "vue-i18n";
 import type { CueVariant } from "../../api/types";
 import AppIcon from "../ui/AppIcon.vue";
 
 defineProps<{ variants: CueVariant[]; current: string; busy: boolean }>();
 const emit = defineEmits<{ pick: [text: string]; run: [prompt: string] }>();
 
+const { t } = useI18n();
 const prompt = ref("");
 
 function run() {
@@ -19,14 +21,14 @@ function run() {
 <template>
   <div class="picker">
     <p class="head">
-      <span class="section-label"><AppIcon name="sparkle" :size="12" /> ALTERNATIVE AI RENDERINGS</span>
-      <span class="hint">Click to apply</span>
+      <span class="section-label"><AppIcon name="sparkle" :size="12" /> {{ t("editor.variants.title") }}</span>
+      <span class="hint">{{ t("editor.variants.hint") }}</span>
     </p>
 
     <ul class="options">
       <li v-for="(v, i) in variants" :key="`${v.label}-${i}`">
         <button type="button" class="option" :class="{ active: v.text === current }" :aria-pressed="v.text === current" @click="emit('pick', v.text)">
-          <span class="label">Option {{ i + 1 }}: {{ v.label }} ({{ [...v.text].length }} chars)</span>
+          <span class="label">{{ t("editor.variants.option", { n: i + 1, label: v.label, chars: t("editor.variants.chars", { count: [...v.text].length }, [...v.text].length) }) }}</span>
           <span class="text">{{ v.text }}</span>
           <AppIcon v-if="v.text === current" class="tick" name="check" :size="16" />
         </button>
@@ -34,8 +36,8 @@ function run() {
     </ul>
 
     <form class="prompt" @submit.prevent="run">
-      <input v-model="prompt" type="text" placeholder="e.g. Make it more casual slang..." aria-label="Custom context prompt" :disabled="busy" />
-      <button type="submit" :disabled="busy || !prompt.trim()"><AppIcon name="play" :size="12" /> {{ busy ? "Running…" : "Run" }}</button>
+      <input v-model="prompt" type="text" :placeholder="t('editor.variants.placeholder')" :aria-label="t('editor.variants.promptLabel')" :disabled="busy" />
+      <button type="submit" :disabled="busy || !prompt.trim()"><AppIcon name="play" :size="12" /> {{ busy ? t("editor.variants.running") : t("editor.variants.run") }}</button>
     </form>
   </div>
 </template>

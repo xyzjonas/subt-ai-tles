@@ -1,19 +1,21 @@
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
 import type { Language } from "../../api/types";
+import { languageLabel } from "../../utils/language";
 import AppIcon from "../ui/AppIcon.vue";
 
 defineProps<{ languages: Language[] }>();
 const targetCode = defineModel<string>("targetCode", { required: true });
 
-const label = (l: Language) => `${l.flag} ${l.name}${l.native ? ` (${l.native})` : ""}`;
+const { locale } = useI18n();
 </script>
 
 <template>
   <section class="target">
-    <label for="target-language" class="section-label">Target language</label>
+    <label for="target-language" class="section-label">{{ $t("translate.target") }}</label>
     <div class="select">
       <select id="target-language" v-model="targetCode">
-        <option v-for="lang in languages" :key="lang.code" :value="lang.code">{{ label(lang) }}</option>
+        <option v-for="lang in languages" :key="lang.code" :value="lang.code">{{ languageLabel(lang, locale) }}</option>
       </select>
       <AppIcon name="chevron" :size="16" />
     </div>

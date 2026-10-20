@@ -1,22 +1,26 @@
 <script setup lang="ts">
 import type { JobEstimate } from "../../api/types";
+import { useI18n } from "vue-i18n";
 import AppIcon from "../ui/AppIcon.vue";
+import ErrorBanner from "../ui/ErrorBanner.vue";
 
 defineProps<{ estimate: JobEstimate | null; disabled: boolean; submitting: boolean; error: string }>();
 defineEmits<{ submit: [] }>();
+
+const { t, n } = useI18n();
 </script>
 
 <template>
   <section class="action">
     <button type="button" class="cta" :disabled="disabled" @click="$emit('submit')">
       <AppIcon name="bolt" :size="18" />
-      {{ submitting ? "Starting…" : "Translate subtitles (LLM)" }}
+      {{ submitting ? t("translate.action.starting") : t("translate.action.start") }}
       <AppIcon v-if="!submitting" name="arrow" :size="18" />
     </button>
-    <p v-if="error" class="error" role="alert">{{ error }}</p>
+    <ErrorBanner v-if="error" :title="t('translate.action.startFailed')" :message="error" />
     <div class="estimate mono">
-      <span><AppIcon name="clock" :size="14" /> Est. processing: {{ estimate ? `~${estimate.seconds}s` : "—" }}</span>
-      <span><AppIcon name="gear" :size="14" /> {{ estimate ? `~${estimate.tokens.toLocaleString()} tokens` : "—" }}</span>
+      <span><AppIcon name="clock" :size="14" /> {{ t("translate.action.estimate", { value: estimate ? t("translate.action.seconds", { n: estimate.seconds }) : "—" }) }}</span>
+      <span><AppIcon name="gear" :size="14" /> {{ estimate ? t("translate.action.tokens", { n: n(estimate.tokens) }) : "—" }}</span>
     </div>
   </section>
 </template>
@@ -50,12 +54,6 @@ defineEmits<{ submit: [] }>();
   background: #c7d2fe;
   box-shadow: none;
   cursor: not-allowed;
-}
-
-.error {
-  font-size: 13px;
-  color: #b91c1c;
-  text-align: center;
 }
 
 .estimate {

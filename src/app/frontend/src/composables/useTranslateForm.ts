@@ -2,6 +2,7 @@ import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { createJob, estimateJob } from "../api/jobs";
 import { listLanguages } from "../api/languages";
+import { describeError } from "../i18n/apiErrors";
 import type { JobEstimate, Language } from "../api/types";
 import { useSrtFile } from "./useSrtFile";
 
@@ -56,8 +57,8 @@ export function useTranslateForm() {
         targetLang: targetCode.value,
       });
       await router.push({ name: "job", params: { id } });
-    } catch {
-      submitError.value = "Could not start the translation. Please try again.";
+    } catch (e) {
+      submitError.value = describeError(e, "errors.unknown");
     } finally {
       submitting.value = false;
     }

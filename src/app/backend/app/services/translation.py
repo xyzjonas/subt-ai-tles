@@ -28,7 +28,7 @@ from subtaitles import (  # type: ignore[import-untyped]
 from app.cache import get_cache
 from app.config import settings
 from app.db import SessionLocal
-from app.errors import InvalidInputError, UpstreamError
+from app.errors import ErrorCode, ServiceError, UpstreamError
 from app.models import AppSettings, Cue, Job, JobStage, JobStatus, UsageKind, User
 from app.schemas import CueVariant, JobEstimate
 from app.services import app_settings, usage
@@ -64,7 +64,7 @@ def retranslate_cue(db: Session, cue: Cue, prompt: str | None) -> list[CueVarian
     job = db.get(Job, cue.job_id)
     if job is None:
         msg = "Job not found"
-        raise UpstreamError(msg)
+        raise UpstreamError(ErrorCode.JOB_NOT_FOUND, msg)
     neighbours = list(
         db.scalars(
             select(Cue)
@@ -93,10 +93,14 @@ def retranslate_cue(db: Session, cue: Cue, prompt: str | None) -> list[CueVarian
         logger.exception("Retranslating cue %s of job %s failed", cue.index, cue.job_id)
         # Failed calls may still have consumed tokens; the request rollback must not drop them.
         _record_usage(
-            db, job.owner_id, job.id, translator.model, (UsageKind.RETRANSLATE, translator.usage)
+            db,
+            job.owner_id,
+            job.id,
+            translator.model,
+            (UsageKind.RETRANSLATE, translator.usage),
         )
-        msg = _user_message(exc)
-        raise UpstreamError(msg) from exc
+        code = _failure_code(exc)
+        raise UpstreamError(code, code.value.replace("_", " ")) from exc
     usage.record(
         db,
         user_id=job.owner_id,
@@ -131,15 +135,15 @@ def _record_usage(
         db.rollback()
 
 
-def _user_message(exc: Exception) -> str:
-    """Short, user-facing reason. Details (which may include key fragments) stay in the log."""
+def _failure_code(exc: Exception) -> ErrorCode:
+    """User-facing reason as a code the frontend localizes; details stay in the log."""
     if isinstance(exc, AuthenticationError):
-        return "The translation service is not configured correctly"
+        return ErrorCode.TRANSLATION_NOT_CONFIGURED
     if isinstance(exc, RateLimitError):
-        return "The translation service is busy, please try again later"
-    if isinstance(exc, InvalidInputError):
-        return str(exc)
-    return f"Translation failed ({type(exc).__name__})"
+        return ErrorCode.TRANSLATION_BUSY
+    if isinstance(exc, ServiceError):
+        return exc.code
+    return ErrorCode.TRANSLATION_FAILED
 
 
 def _load(db: Session, job_id: str) -> Job | None:
@@ -259,7 +263,9 @@ async def run_job(job_id: str) -> None:
             job.processed_cues = job.cue_count
             job.status = JobStatus.READY
             job.stage = JobStage.TRANSLATING
-            job.summary_status = pipeline.summary_status.value if pipeline.summary_status else None
+            job.summary_status = (
+                pipeline.summary_status.value if pipeline.summary_status else None
+            )
             job.model = translator.model
             db.commit()
         except Exception as exc:
@@ -268,7 +274,7 @@ async def run_job(job_id: str) -> None:
             job = _load(db, job_id)
             if job is not None:
                 job.status = JobStatus.FAILED
-                job.error = _user_message(exc)
+                job.error = _failure_code(exc)
                 db.commit()
         finally:
             if translator is not None:

@@ -1,27 +1,26 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { useI18n } from "vue-i18n";
 
+const { t } = useI18n();
 const temperature = defineModel<number>({ required: true });
 const props = defineProps<{ supported: boolean; modelLabel: string }>();
 
 const percent = computed(() => `${temperature.value * 100}%`);
 const wording = computed(() => {
-  if (temperature.value <= 0.2) return "Very consistent: the same input gives the same translation.";
-  if (temperature.value <= 0.6) return "Balanced: mostly consistent, with some variety in wording.";
-  return "Creative: freer, more varied wording. Less predictable.";
+  if (temperature.value <= 0.2) return t("dashboard.temperature.consistent");
+  if (temperature.value <= 0.6) return t("dashboard.temperature.balanced");
+  return t("dashboard.temperature.creativeNote");
 });
 </script>
 
 <template>
   <section class="temperature" aria-labelledby="temperature-label">
     <header>
-      <label id="temperature-label" for="temperature">Creativity (temperature)</label>
+      <label id="temperature-label" for="temperature">{{ t("dashboard.temperature.label") }}</label>
       <output for="temperature" class="value mono">{{ temperature.toFixed(1) }}</output>
     </header>
-    <p id="temperature-help" class="hint">
-      How freely the model words its translations. Lower values give steadier, more predictable subtitles, which is
-      usually best. Higher values allow looser, more creative phrasing.
-    </p>
+    <p id="temperature-help" class="hint">{{ t("dashboard.temperature.help") }}</p>
 
     <input
       id="temperature"
@@ -35,14 +34,13 @@ const wording = computed(() => {
       :style="{ '--fill': percent }"
     />
     <div class="ends" aria-hidden="true">
-      <span>Literal · consistent</span>
-      <span>Creative · varied</span>
+      <span>{{ t("dashboard.temperature.literal") }}</span>
+      <span>{{ t("dashboard.temperature.creative") }}</span>
     </div>
 
     <p v-if="supported" id="temperature-current" class="current">{{ wording }}</p>
     <p v-else id="temperature-current" class="current unsupported">
-      {{ props.modelLabel }} manages its own randomness, so this setting is ignored for it. Your value is kept for models
-      that use it.
+      {{ t("dashboard.temperature.unsupported", { model: props.modelLabel }) }}
     </p>
   </section>
 </template>

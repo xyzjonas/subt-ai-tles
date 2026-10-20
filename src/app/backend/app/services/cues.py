@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.errors import NotFoundError
+from app.errors import ErrorCode, NotFoundError
 from app.models import Cue, User
 from app.schemas import CueUpdate, CueVariant
 from app.services import jobs, translation, usage
@@ -17,7 +17,7 @@ def get(db: Session, user: User, job_id: str, index: int) -> Cue:
     cue = db.scalar(select(Cue).where(Cue.job_id == job_id, Cue.index == index))
     if cue is None:
         msg = "Cue not found"
-        raise NotFoundError(msg)
+        raise NotFoundError(ErrorCode.CUE_NOT_FOUND, msg)
     return cue
 
 

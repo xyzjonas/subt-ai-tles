@@ -4,12 +4,15 @@ import QuotaMeter from "./QuotaMeter.vue";
 import UsageSummary from "./UsageSummary.vue";
 import UsageTable from "./UsageTable.vue";
 
-const { summary, records, period, buckets, current, loading, loadingMore, hasMore, error, loadMore } = useUsage();
+/** Show this user's usage instead of your own (admin only). */
+const props = defineProps<{ userId?: number }>();
+
+const { summary, records, period, buckets, current, loading, loadingMore, hasMore, error, loadMore } = useUsage(props.userId);
 </script>
 
 <template>
   <div class="usage">
-    <p v-if="loading" class="status" role="status">Loading…</p>
+    <p v-if="loading" class="status" role="status">{{ $t("loading") }}</p>
     <p v-else-if="error && !summary" class="status" role="alert">{{ error }}</p>
     <template v-else-if="summary">
       <QuotaMeter :quota="summary.quota" />

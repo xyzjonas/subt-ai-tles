@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
+import ErrorBanner from "../components/ui/ErrorBanner.vue";
 import JobControls from "../components/progress/JobControls.vue";
 import JobOverview from "../components/progress/JobOverview.vue";
 import LiveCueStream from "../components/progress/LiveCueStream.vue";
@@ -8,6 +10,7 @@ import PipelineMilestones from "../components/progress/PipelineMilestones.vue";
 import ProgressGauge from "../components/progress/ProgressGauge.vue";
 import { useJobProgress } from "../composables/useJobProgress";
 
+const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const id = computed(() => String(route.params.id));
@@ -19,15 +22,17 @@ const { job, cue, error, cancelling, processed, total, percent, chunkPercent, mi
 );
 
 function confirmCancel() {
-  if (!confirm("Cancel this translation? Tokens already consumed are still billed.")) return;
+  if (!confirm(t("progress.confirmCancel"))) return;
   cancelled = true;
   cancel();
 }
 </script>
 
 <template>
-  <p v-if="error" class="state" role="alert">{{ error }} <button type="button" @click="retry">Retry</button></p>
-  <p v-else-if="!job" class="state" role="status">Loading…</p>
+  <ErrorBanner v-if="error" :title="t('errors.title')" :message="error">
+    <button type="button" class="retry" @click="retry">{{ t("retry") }}</button>
+  </ErrorBanner>
+  <p v-else-if="!job" class="state" role="status">{{ t("loading") }}</p>
 
   <section v-else class="progress">
     <JobOverview :job="job" />
@@ -50,8 +55,9 @@ function confirmCancel() {
   color: var(--text-muted);
 }
 
-.state button {
+.retry {
   height: 36px;
+  margin-top: 10px;
   padding: 0 16px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);

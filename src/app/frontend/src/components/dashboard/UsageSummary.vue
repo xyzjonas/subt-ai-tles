@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { useI18n } from "vue-i18n";
 import type { UsageBucket } from "../../api/types";
 import { formatCredits, formatTokens, periodLabel, type UsagePeriod } from "../../utils/usage";
 import SegmentedTabs from "../ui/SegmentedTabs.vue";
@@ -10,43 +11,36 @@ const props = defineProps<{
   current: Record<UsagePeriod, UsageBucket | undefined>;
 }>();
 
-const PERIODS: { value: UsagePeriod; label: string }[] = [
-  { value: "day", label: "Daily" },
-  { value: "week", label: "Weekly" },
-  { value: "month", label: "Monthly" },
-];
+const { t } = useI18n();
 
-const HEADLINES: { period: UsagePeriod; label: string }[] = [
-  { period: "day", label: "Today" },
-  { period: "week", label: "This week" },
-  { period: "month", label: "This month" },
-];
+const PERIOD_KEYS: UsagePeriod[] = ["day", "week", "month"];
+const PERIODS = computed(() => PERIOD_KEYS.map((value) => ({ value, label: t(`dashboard.summary.periods.${value}`) })));
 
 const peak = computed(() => Math.max(1, ...props.buckets.map((b) => b.credits)));
 </script>
 
 <template>
   <section class="summary" aria-labelledby="summary-title">
-    <h2 id="summary-title">Spending</h2>
+    <h2 id="summary-title">{{ t("dashboard.summary.title") }}</h2>
 
     <dl class="headlines">
-      <div v-for="h in HEADLINES" :key="h.period">
-        <dt>{{ h.label }}</dt>
-        <dd class="mono">{{ formatCredits(current[h.period]?.credits ?? 0) }}</dd>
-        <dd class="tokens mono">{{ formatTokens(current[h.period]?.tokens ?? 0) }} tokens</dd>
+      <div v-for="key in PERIOD_KEYS" :key="key">
+        <dt>{{ t(`dashboard.summary.headlines.${key}`) }}</dt>
+        <dd class="mono">{{ formatCredits(current[key]?.credits ?? 0) }}</dd>
+        <dd class="tokens mono">{{ t("dashboard.summary.tokens", { n: formatTokens(current[key]?.tokens ?? 0) }) }}</dd>
       </div>
     </dl>
 
-    <SegmentedTabs v-model="period" :tabs="PERIODS" label="Summary period" />
+    <SegmentedTabs v-model="period" :tabs="PERIODS" :label="t('dashboard.summary.periodLabel')" />
 
     <table>
-      <caption class="sr-only">Credits spent per {{ period }}</caption>
+      <caption class="sr-only">{{ t(`dashboard.summary.caption.${period}`) }}</caption>
       <thead>
         <tr>
-          <th scope="col">Period</th>
-          <th scope="col" class="num">Requests</th>
-          <th scope="col" class="num">Tokens</th>
-          <th scope="col" class="num">Credits</th>
+          <th scope="col">{{ t("dashboard.summary.period") }}</th>
+          <th scope="col" class="num">{{ t("dashboard.summary.requests") }}</th>
+          <th scope="col" class="num">{{ t("dashboard.summary.tokensColumn") }}</th>
+          <th scope="col" class="num">{{ t("dashboard.summary.credits") }}</th>
         </tr>
       </thead>
       <tbody>

@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { useI18n } from "vue-i18n";
 import AppIcon from "../ui/AppIcon.vue";
 
 defineProps<{ cancelling: boolean }>();
 defineEmits<{ cancel: [] }>();
 
+const { t } = useI18n();
 const notify = ref(false);
 
 async function toggleNotify() {
@@ -20,16 +22,16 @@ async function toggleNotify() {
     <div class="notify">
       <AppIcon name="bell" :size="20" />
       <label for="notify" class="text">
-        <strong>Notify when complete</strong>
-        <small>Send push alert upon compilation</small>
+        <strong>{{ t("progress.controls.notify") }}</strong>
+        <small>{{ t("progress.controls.notifyHint") }}</small>
       </label>
       <button id="notify" type="button" role="switch" class="switch" :aria-checked="notify" @click="toggleNotify" />
     </div>
 
     <button type="button" class="cancel" :disabled="cancelling" @click="$emit('cancel')">
-      <AppIcon name="stop" :size="16" /> {{ cancelling ? "Cancelling…" : "Cancel Translation" }}
+      <AppIcon name="stop" :size="16" /> {{ cancelling ? t("progress.controls.cancelling") : t("progress.controls.cancel") }}
     </button>
-    <p class="foot">Tokens consumed will reflect progress made</p>
+    <p class="foot">{{ t("progress.controls.foot") }}</p>
   </section>
 </template>
 

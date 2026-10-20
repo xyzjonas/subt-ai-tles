@@ -1,11 +1,13 @@
 import { computed, onMounted, ref } from "vue";
 import { getUsage, listUsageRecords } from "../api/usage";
 import type { UsageBucket, UsageRecord, UsageSummary } from "../api/types";
+import { t } from "../i18n";
 import type { UsagePeriod } from "../utils/usage";
 
 const PAGE_SIZE = 50;
 
-export function useUsage() {
+/** Usage of the signed-in user, or of the user with `userId` (admin only). */
+export function useUsage(userId?: number) {
   const summary = ref<UsageSummary | null>(null);
   const records = ref<UsageRecord[]>([]);
   const period = ref<UsagePeriod>("day");
@@ -16,12 +18,12 @@ export function useUsage() {
 
   onMounted(async () => {
     try {
-      const [usage, page] = await Promise.all([getUsage(), listUsageRecords(PAGE_SIZE, 0)]);
+      const [usage, page] = await Promise.all([getUsage(userId), listUsageRecords(PAGE_SIZE, 0, userId)]);
       summary.value = usage;
       records.value = page;
       hasMore.value = page.length === PAGE_SIZE;
     } catch {
-      error.value = "Could not load your usage.";
+      error.value = t(userId === undefined ? "dashboard.usageLoadFailed" : "dashboard.userUsageLoadFailed");
     } finally {
       loading.value = false;
     }
@@ -30,11 +32,11 @@ export function useUsage() {
   async function loadMore() {
     loadingMore.value = true;
     try {
-      const page = await listUsageRecords(PAGE_SIZE, records.value.length);
+      const page = await listUsageRecords(PAGE_SIZE, records.value.length, userId);
       records.value.push(...page);
       hasMore.value = page.length === PAGE_SIZE;
     } catch {
-      error.value = "Could not load more requests.";
+      error.value = t("dashboard.moreLoadFailed");
     } finally {
       loadingMore.value = false;
     }

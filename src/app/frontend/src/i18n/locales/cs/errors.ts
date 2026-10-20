@@ -1,0 +1,46 @@
+import type en from "../en/errors";
+
+const errors: typeof en = {
+  title: "Něco se pokazilo",
+  unknown: "Něco se pokazilo. Zkuste to prosím znovu.",
+  network: "Nelze se spojit se serverem. Zkontrolujte připojení a zkuste to znovu.",
+  http401: "Platnost přihlášení vypršela. Přihlaste se prosím znovu.",
+  http403: "K této akci nemáte oprávnění.",
+  http404: "Hledanou položku se nepodařilo najít.",
+  http413: "Soubor je příliš velký.",
+  http422: "Některé zadané údaje nejsou platné.",
+  http429: "Příliš mnoho požadavků. Zkuste to prosím za chvíli.",
+  http5xx: "Na serveru došlo k chybě. Zkuste to prosím za několik minut.",
+  codes: {
+    invalid_credentials: "Nesprávné uživatelské jméno nebo heslo.",
+    password_change_required: "Než budete pokračovat, musíte si zvolit nové heslo.",
+    admin_only: "Tuto akci mohou provést pouze správci.",
+    quota_exceeded:
+      "Vyčerpali jste všechny kredity pro tento měsíc, a nové překlady jsou proto pozastavené. Kvóta se obnoví prvního dne v měsíci (UTC), nebo můžete požádat správce o navýšení limitu. Svou spotřebu najdete na stránce Přehled.",
+    model_not_offered: "Model „{model}“ není dostupný.",
+    model_without_rate: "Model „{model}“ zatím nemá nastavenou sazbu kreditů, proto jej nelze vybrat.",
+    job_not_found: "Tento překlad už neexistuje.",
+    cue_not_found: "Tento titulek už neexistuje.",
+    user_not_found: "Tento uživatel už neexistuje.",
+    job_not_processing: "Tento překlad už neběží.",
+    translation_not_ready: "Překlad ještě není dokončen.",
+    file_not_srt: "Podporované jsou pouze soubory .srt.",
+    file_too_large: "Soubor je větší než limit {max_mb} MB.",
+    file_not_utf8: "Soubor musí být v kódování UTF-8.",
+    file_invalid_srt: "Toto nevypadá jako platný soubor .srt.",
+    file_empty: "Soubor neobsahuje žádné titulky.",
+    same_language: "Zdrojový a cílový jazyk se musí lišit.",
+    unknown_language: "Neznámý jazyk: {language}.",
+    username_taken: "Toto uživatelské jméno je již obsazené.",
+    last_admin: "Vždy musí zůstat alespoň jeden aktivní správce.",
+    cannot_delete_self: "Nemůžete smazat vlastní účet.",
+    wrong_current_password: "Stávající heslo není správné.",
+    password_unchanged: "Nové heslo se musí lišit od stávajícího.",
+    translation_not_configured: "Překladová služba není správně nastavená. Obraťte se prosím na správce.",
+    translation_busy: "Překladová služba je právě vytížená. Zkuste to prosím za několik minut.",
+    translation_failed: "Překlad se neočekávaně nezdařil. Zkuste to prosím znovu.",
+    translation_queue_failed: "Překlad se nepodařilo zařadit do fronty. Zkuste to prosím znovu.",
+  },
+};
+
+export default errors;

@@ -1,29 +1,37 @@
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
 import type { CurrentUser } from "../../api/types";
+import LocaleSetting from "./LocaleSetting.vue";
 import { formatCredits } from "../../utils/usage";
 import { formatWhen } from "../../utils/srt";
 
 defineProps<{ user: CurrentUser }>();
+
+const { t } = useI18n();
 </script>
 
 <template>
   <section class="details" aria-labelledby="details-title">
-    <h2 id="details-title">Account</h2>
+    <h2 id="details-title">{{ t("dashboard.details.title") }}</h2>
     <dl>
       <div>
-        <dt>Username</dt>
+        <dt>{{ t("dashboard.details.username") }}</dt>
         <dd>{{ user.username }}</dd>
       </div>
       <div>
-        <dt>Role</dt>
-        <dd>{{ user.isAdmin ? "Administrator" : "Member" }}</dd>
+        <dt>{{ t("dashboard.details.role") }}</dt>
+        <dd>{{ user.isAdmin ? t("dashboard.details.admin") : t("dashboard.details.member") }}</dd>
       </div>
       <div>
-        <dt>Monthly quota</dt>
-        <dd><span class="mono">{{ formatCredits(user.monthlyQuota) }}</span> credits</dd>
+        <dt>{{ t("dashboard.details.quota") }}</dt>
+        <dd class="mono">{{ t("dashboard.credits", { amount: formatCredits(user.monthlyQuota) }, user.monthlyQuota) }}</dd>
       </div>
       <div>
-        <dt>Member since</dt>
+        <dt><label for="ui-language">{{ t("locale.setting") }}</label></dt>
+        <dd><LocaleSetting /></dd>
+      </div>
+      <div>
+        <dt>{{ t("dashboard.details.since") }}</dt>
         <dd>
           <time :datetime="user.createdAt">{{ formatWhen(user.createdAt) }}</time>
         </dd>

@@ -1,3 +1,5 @@
+import type { Locale } from "../i18n";
+
 export interface Language {
   code: string;
   name: string;
@@ -63,10 +65,32 @@ export interface CurrentUser {
   id: number;
   username: string;
   isAdmin: boolean;
+  /** False for blocked users. */
   isActive: boolean;
+  /** True while the password is a temporary one an admin set. */
+  mustChangePassword: boolean;
   /** Credits per calendar month (UTC). */
   monthlyQuota: number;
+  /** UI language; null follows the browser. */
+  locale: Locale | null;
   createdAt: string;
+}
+
+/** Fields an admin can change on any user; omitted ones stay as they are. */
+export interface UserUpdate {
+  /** Sets a temporary password the user must replace on their next sign-in. */
+  password?: string;
+  isActive?: boolean;
+  monthlyQuota?: number;
+}
+
+export interface NewUser {
+  username: string;
+  /** Temporary: the user must replace it on first sign-in. */
+  password: string;
+  isAdmin: boolean;
+  monthlyQuota?: number;
+  locale?: Locale | null;
 }
 
 export type UsageKind = "translate" | "retranslate" | "summarize";

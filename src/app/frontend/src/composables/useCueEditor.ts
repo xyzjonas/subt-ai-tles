@@ -2,6 +2,7 @@ import { computed, reactive, ref, watch, type Ref } from "vue";
 import { listCues, retranslateCue, updateCue } from "../api/cues";
 import { getJob } from "../api/jobs";
 import type { Cue, CueVariant, Job } from "../api/types";
+import { describeError } from "../i18n/apiErrors";
 import { cps } from "../utils/srt";
 
 export type CueFilter = "all" | "modified" | "flagged" | "cps";
@@ -37,6 +38,8 @@ export function useCueEditor(jobId: Ref<string>) {
   const variants = reactive<Record<number, CueVariant[]>>({});
   const status = reactive<Record<number, "loading" | "error">>({});
   const saving = reactive<Record<number, "saving" | "error">>({});
+  /** Localized reason of the last failed retranslate / save of a cue. */
+  const problems = reactive<Record<number, string>>({});
 
   async function load() {
     loading.value = true;
@@ -48,8 +51,9 @@ export function useCueEditor(jobId: Ref<string>) {
       for (const key of Object.keys(variants)) delete variants[Number(key)];
       for (const key of Object.keys(status)) delete status[Number(key)];
       for (const key of Object.keys(saving)) delete saving[Number(key)];
-    } catch {
-      error.value = "We couldn't load this request.";
+      for (const key of Object.keys(problems)) delete problems[Number(key)];
+    } catch (e) {
+      error.value = describeError(e, "editor.loadFailed");
     } finally {
       loading.value = false;
     }
@@ -93,7 +97,8 @@ export function useCueEditor(jobId: Ref<string>) {
       cue.modifiedAt = cue.target === cue.aiTarget ? undefined : Date.now();
       cue.draft = undefined;
       delete saving[cue.index];
-    } catch {
+    } catch (e) {
+      problems[cue.index] = describeError(e, "errors.unknown");
       saving[cue.index] = "error";
     }
   }
@@ -105,11 +110,13 @@ export function useCueEditor(jobId: Ref<string>) {
 
   async function retranslate(cue: EditorCue, prompt?: string) {
     status[cue.index] = "loading";
+    delete problems[cue.index];
     try {
       const fresh = await retranslateCue(jobId.value, cue.index, prompt);
       variants[cue.index] = prompt ? [...(variants[cue.index] ?? []), ...fresh] : fresh;
       delete status[cue.index];
-    } catch {
+    } catch (e) {
+      problems[cue.index] = describeError(e, "errors.unknown");
       status[cue.index] = "error";
     }
   }
@@ -117,11 +124,12 @@ export function useCueEditor(jobId: Ref<string>) {
   const dismiss = (cue: EditorCue) => {
     delete variants[cue.index];
     delete status[cue.index];
+    delete problems[cue.index];
   };
 
   const pending = computed(() => cues.value.filter((c) => c.draft !== undefined).length);
   const toggleFlag = (cue: EditorCue) => (cue.flagged = !cue.flagged);
   const showMore = () => (limit.value += PAGE_SIZE);
 
-  return { job, cues, loading, error, query, filter, counts, visible, remaining, runningTime, variants, status, saving, pending, load, propose, accept, discard, retranslate, dismiss, toggleFlag, showMore };
+  return { job, cues, loading, error, query, filter, counts, visible, remaining, runningTime, variants, status, saving, problems, pending, load, propose, accept, discard, retranslate, dismiss, toggleFlag, showMore };
 }

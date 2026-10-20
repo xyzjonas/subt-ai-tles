@@ -1,0 +1,61 @@
+export default {
+  loadFailed: "We couldn't load this request.",
+  failedFallback: "This translation failed.",
+  confirmCancel: "Cancel this translation? Tokens already consumed are still billed.",
+  stage: {
+    recognizing: "Recognizing the title…",
+    summarizing: "Summarizing the story…",
+    translating: "Translating cues {done}/{total}",
+  },
+  overview: {
+    label: "Job overview",
+    live: "Live",
+    specs: "SubRip (.srt) • UTF-8 • Submitted {ago}",
+  },
+  stream: {
+    title: "Live translation",
+    cue: "Cue #{index}",
+    waiting: "Waiting for the first translated line…",
+    duration: "{seconds}s duration",
+  },
+  milestones: {
+    title: "Progress",
+    steps: "{count} Step | {count} Steps",
+    state: { done: "Done", active: "Processing", pending: "Pending", skipped: "Skipped" },
+    recognize: {
+      title: "Uploading & recognizing",
+      active: "Reading the file and looking up the title…",
+      skipped: "Title not recognized",
+      done: "Title recognized",
+    },
+    summarize: {
+      title: "Summarizing",
+      pending: "Waiting for the title lookup",
+      active: "Reading the whole script for context…",
+      generated: "Story brief written",
+      stored: "Reused saved story brief",
+      skipped: "Title not recognized, no brief needed",
+        },
+    translate: {
+      title: "Translating cues",
+      done: "Translated all {total} lines",
+      active: "Translating lines {from}-{to} of {total}…",
+      pending: "Waiting for the story summary",
+    },
+    finish: { title: "Done", done: "Ready to review", pending: "Pending translation" },
+  },
+  gauge: {
+    label: "Translation progress",
+    lines: "{processed} / {total} lines",
+    tagline: "Translating dialogue nuances",
+    note: "Applying contextual colloquialisms and timing sync…",
+    chunk: "Current chunk progress",
+  },
+  controls: {
+    notify: "Notify when complete",
+    notifyHint: "Send a push alert when the translation is finished",
+    cancel: "Cancel translation",
+    cancelling: "Cancelling…",
+    foot: "Tokens consumed so far are still billed",
+  },
+};

@@ -1,10 +1,13 @@
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
 import type { Job } from "../../api/types";
 import { timeAgo } from "../../utils/srt";
 import AppIcon from "../ui/AppIcon.vue";
 import StatusBadge from "../ui/StatusBadge.vue";
 
 defineProps<{ job: Job }>();
+
+const { t } = useI18n();
 </script>
 
 <template>
@@ -16,11 +19,11 @@ defineProps<{ job: Job }>();
         <span class="langs">
           {{ job.sourceLang.toUpperCase() }} <AppIcon name="arrow" :size="12" /> {{ job.targetLang.toUpperCase() }}
         </span>
-        • {{ job.cueCount.toLocaleString() }} cues • {{ timeAgo(job.createdAt) }}
+        • {{ t("cues", { count: job.cueCount }, job.cueCount) }} • {{ timeAgo(job.createdAt) }}
       </span>
     </span>
     <StatusBadge :tone="job.status === 'ready' ? 'success' : 'neutral'">
-      {{ job.status === "ready" ? "Ready" : job.status === "processing" ? "Processing" : "Failed" }}
+      {{ t(`status.${job.status}`) }}
     </StatusBadge>
   </RouterLink>
 </template>

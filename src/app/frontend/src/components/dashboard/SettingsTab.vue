@@ -1,34 +1,36 @@
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
 import { useAdminSettings } from "../../composables/useAdminSettings";
 import ModelPicker from "./ModelPicker.vue";
 import TemperatureSlider from "./TemperatureSlider.vue";
 
+const { t } = useI18n();
 const { saved, draft, selected, dirty, loading, saving, justSaved, error, save, reset } = useAdminSettings();
 </script>
 
 <template>
   <div class="settings">
-    <p v-if="loading" class="status" role="status">Loading…</p>
+    <p v-if="loading" class="status" role="status">{{ t("loading") }}</p>
     <p v-else-if="!saved" class="status" role="alert">{{ error }}</p>
     <form v-else @submit.prevent="save">
-      <p class="intro">Global translation settings. They apply to every user's new translations.</p>
+      <p class="intro">{{ t("dashboard.settings.intro") }}</p>
 
       <ModelPicker v-model="draft.model" :models="saved.models" />
       <TemperatureSlider
         v-model="draft.temperature"
         :supported="selected?.supportsTemperature ?? true"
-        :model-label="selected?.label ?? 'This model'"
+        :model-label="selected?.label ?? t('dashboard.models.thisModel')"
       />
 
       <footer class="bar">
-        <p class="note">Applies to new translations. Jobs already running keep the model they started with.</p>
+        <p class="note">{{ t("dashboard.settings.note") }}</p>
         <div class="actions">
-          <button type="button" class="secondary" :disabled="!dirty || saving" @click="reset">Reset</button>
+          <button type="button" class="secondary" :disabled="!dirty || saving" @click="reset">{{ t("dashboard.settings.reset") }}</button>
           <button type="submit" class="primary" :disabled="!dirty || saving">
-            {{ saving ? "Saving…" : "Save changes" }}
+            {{ saving ? t("dashboard.settings.saving") : t("dashboard.settings.save") }}
           </button>
         </div>
-        <p v-if="justSaved && !dirty" class="ok" role="status">Settings saved.</p>
+        <p v-if="justSaved && !dirty" class="ok" role="status">{{ t("dashboard.settings.saved") }}</p>
         <p v-if="error" class="fail" role="alert">{{ error }}</p>
       </footer>
     </form>

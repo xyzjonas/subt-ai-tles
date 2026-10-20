@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
+import { useI18n } from "vue-i18n";
 import { downloadJob } from "../../api/jobs";
 import type { Job } from "../../api/types";
+import { displayLanguage } from "../../utils/language";
 import { stageLabel } from "../../utils/stage";
 import { downloadBlob, formatWhen, timeAgo, translatedFileName } from "../../utils/srt";
 import AppIcon from "../ui/AppIcon.vue";
@@ -9,9 +11,11 @@ import StatusBadge from "../ui/StatusBadge.vue";
 
 const props = defineProps<{ job: Job }>();
 
+const { t, locale } = useI18n();
+
 const processing = computed(() => props.job.status === "processing");
 const percent = computed(() => Math.round(((props.job.processedCues ?? 0) / props.job.cueCount) * 100));
-const lang = (code: string) => new Intl.DisplayNames("en", { type: "language" }).of(code) ?? code;
+const lang = (code: string) => displayLanguage(code, locale.value) ?? code;
 
 const downloading = ref(false);
 async function download() {
@@ -26,7 +30,7 @@ async function download() {
 
 <template>
   <article class="card" :class="{ processing }">
-    <RouterLink :to="{ name: job.status === 'ready' ? 'editor' : 'job', params: { id: job.id } }" class="link" :aria-label="`Open ${job.fileName}`" />
+    <RouterLink :to="{ name: job.status === 'ready' ? 'editor' : 'job', params: { id: job.id } }" class="link" :aria-label="t('requests.card.open', { name: job.fileName })" />
     <header class="head">
       <span class="icon"><AppIcon name="file" :size="18" /></span>
       <h3 class="name mono">{{ job.fileName }}</h3>
@@ -41,17 +45,17 @@ async function download() {
 
     <template v-if="processing">
       <StatusBadge tone="warning" dot pulse>
-        Processing {{ percent }}% • {{ job.processedCues }} / {{ job.cueCount }} lines
+        {{ t("requests.card.processing", { percent, done: job.processedCues ?? 0, total: job.cueCount }) }}
       </StatusBadge>
-      <progress class="bar" :value="percent" max="100" :aria-label="`${percent}% translated`" />
+      <progress class="bar" :value="percent" max="100" :aria-label="t('requests.card.percentLabel', { percent })" />
       <p class="step mono"><AppIcon name="sync" :size="12" /> {{ stageLabel(job) }}</p>
     </template>
 
     <template v-else>
-      <StatusBadge tone="success"><AppIcon name="check" :size="12" /> Completed • {{ job.cueCount }} lines</StatusBadge>
-      <p v-if="job.model" class="step mono">Synced with {{ job.model }}</p>
+      <StatusBadge tone="success"><AppIcon name="check" :size="12" /> {{ t("requests.card.completed", { count: job.cueCount }, job.cueCount) }}</StatusBadge>
+      <p v-if="job.model" class="step mono">{{ t("requests.card.syncedWith", { model: job.model }) }}</p>
       <button type="button" class="download" :disabled="downloading" @click="download">
-        <AppIcon name="download" :size="14" /> {{ downloading ? "Preparing…" : "Download" }}
+        <AppIcon name="download" :size="14" /> {{ downloading ? t("requests.card.preparing") : t("requests.card.download") }}
       </button>
     </template>
 

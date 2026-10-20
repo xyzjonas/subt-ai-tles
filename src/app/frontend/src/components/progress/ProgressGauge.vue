@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { useI18n } from "vue-i18n";
 
 const props = defineProps<{ percent: number; processed: number; total: number; chunkPercent: number }>();
+
+const { t } = useI18n();
 
 const RADIUS = 80;
 const circumference = 2 * Math.PI * RADIUS;
@@ -9,7 +12,7 @@ const offset = computed(() => circumference * (1 - props.percent / 100));
 </script>
 
 <template>
-  <section class="gauge" aria-label="Translation progress">
+  <section class="gauge" :aria-label="t('progress.gauge.label')">
     <div class="ring">
       <svg viewBox="0 0 180 180" aria-hidden="true">
         <circle class="track" cx="90" cy="90" :r="RADIUS" />
@@ -17,13 +20,13 @@ const offset = computed(() => circumference * (1 - props.percent / 100));
       </svg>
       <p class="label">
         <output class="percent">{{ percent }}%</output>
-        <span class="lines">{{ processed }} / {{ total }} lines</span>
+        <span class="lines">{{ t("progress.gauge.lines", { processed, total }) }}</span>
       </p>
     </div>
 
-    <p class="tagline"><span class="dot" /> Translating dialogue nuances</p>
-    <p class="note">Applying contextual colloquialisms and timing sync…</p>
-    <progress class="chunk" :value="chunkPercent" max="100" aria-label="Current chunk progress" />
+    <p class="tagline"><span class="dot" /> {{ t("progress.gauge.tagline") }}</p>
+    <p class="note">{{ t("progress.gauge.note") }}</p>
+    <progress class="chunk" :value="chunkPercent" max="100" :aria-label="t('progress.gauge.chunk')" />
   </section>
 </template>
 

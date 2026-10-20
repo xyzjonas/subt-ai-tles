@@ -14,17 +14,23 @@ const tone = computed(() => (ratio.value >= 1 ? "danger" : ratio.value >= WARN_A
 <template>
   <section class="quota" aria-labelledby="quota-title">
     <header>
-      <h2 id="quota-title">Monthly quota</h2>
+      <h2 id="quota-title">{{ $t("dashboard.quota.title") }}</h2>
       <span class="percent mono" :data-tone="tone">{{ Math.round(ratio * 100) }}%</span>
     </header>
     <progress :value="quota.used" :max="quota.limit || 1" :data-tone="tone" aria-labelledby="quota-title" />
-    <p class="figures">
-      <span class="mono">{{ formatCredits(quota.used) }}</span> of
-      <span class="mono">{{ formatCredits(quota.limit) }}</span> credits used ·
-      <span class="mono">{{ formatCredits(quota.remaining) }}</span> left
-    </p>
+    <i18n-t keypath="dashboard.quota.figures" tag="p" class="figures" scope="global">
+      <template #used>
+        <span class="mono">{{ formatCredits(quota.used) }}</span>
+      </template>
+      <template #limit>
+        <span class="mono">{{ formatCredits(quota.limit) }}</span>
+      </template>
+      <template #left>
+        <span class="mono">{{ formatCredits(quota.remaining) }}</span>
+      </template>
+    </i18n-t>
     <p v-if="tone === 'danger'" class="notice" role="alert">
-      You have used your quota. New translations are paused until it resets next month.
+      {{ $t("dashboard.quota.exhausted") }}
     </p>
   </section>
 </template>

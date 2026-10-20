@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { useI18n } from "vue-i18n";
+import { MAX_SRT_MB } from "../../utils/srt";
 import AppIcon from "../ui/AppIcon.vue";
 import SelectedFileCard from "./SelectedFileCard.vue";
 
 defineProps<{ file: File | null; cueCount: number; error: string; loading: boolean }>();
 const emit = defineEmits<{ select: [file: File]; remove: [] }>();
 
+const { t } = useI18n();
 const input = ref<HTMLInputElement | null>(null);
 const dragging = ref(false);
 
@@ -23,7 +26,7 @@ function onDrop(event: DragEvent) {
 
 <template>
   <section class="zone" aria-labelledby="source-label">
-    <h2 id="source-label" class="section-label">Source subtitle file</h2>
+    <h2 id="source-label" class="section-label">{{ t("translate.file.label") }}</h2>
 
     <SelectedFileCard v-if="file" :file="file" :cue-count="cueCount" @remove="$emit('remove')" />
 
@@ -36,9 +39,9 @@ function onDrop(event: DragEvent) {
       @drop.prevent="onDrop"
     >
       <span class="icon"><AppIcon name="upload" :size="24" /></span>
-      <p class="cta">{{ loading ? "Reading file…" : "Tap to browse or drop .srt file" }}</p>
-      <p class="hint">Accepts .srt, UTF-8 encoded up to 25MB</p>
-      <button type="button" class="browse" @click="input?.click()">Select from device</button>
+      <p class="cta">{{ loading ? t("translate.file.reading") : t("translate.file.prompt") }}</p>
+      <p class="hint">{{ t("translate.file.hint", { max: MAX_SRT_MB }) }}</p>
+      <button type="button" class="browse" @click="input?.click()">{{ t("translate.file.browse") }}</button>
       <input ref="input" type="file" accept=".srt,text/plain,application/x-subrip" hidden @change="onPick" />
     </div>
 

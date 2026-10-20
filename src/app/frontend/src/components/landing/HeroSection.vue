@@ -4,11 +4,8 @@ import StatusBadge from "../ui/StatusBadge.vue";
 
 <template>
   <section class="hero">
-    <h1>Translate subtitles with AI</h1>
-    <p>
-      Upload any .srt file, pick your languages, and let LLMs deliver
-      contextual, synchronized translations.
-    </p>
+    <h1>{{ $t("translate.hero.title") }}</h1>
+    <p>{{ $t("translate.hero.lead") }}</p>
   </section>
 </template>
 

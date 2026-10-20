@@ -1,10 +1,15 @@
 import { clearSession, getAuthHeader } from "./session";
 
-/** Error carrying the HTTP status and the backend's `detail` message. */
+/**
+ * Error carrying the HTTP status and the backend's `detail` message (English, for logs).
+ * `code` and `params` identify the problem for localized display, see i18n/apiErrors.ts.
+ */
 export class ApiError extends Error {
   constructor(
     readonly status: number,
     message: string,
+    readonly code?: string,
+    readonly params?: Record<string, string | number>,
   ) {
     super(message);
   }
@@ -42,8 +47,14 @@ export async function request(path: string, init: ApiInit = {}): Promise<Respons
       clearSession();
       onUnauthorized();
     }
-    const detail = await response.json().then((d) => d?.detail, () => undefined);
-    throw new ApiError(response.status, typeof detail === "string" ? detail : response.statusText);
+    const body = await response.json().then((d) => d, () => undefined);
+    const detail = body?.detail;
+    throw new ApiError(
+      response.status,
+      typeof detail === "string" ? detail : response.statusText,
+      typeof body?.code === "string" ? body.code : undefined,
+      body?.params,
+    );
   }
   return response;
 }

@@ -8,15 +8,19 @@ from app.api import api_router
 from app.db import DbSessionMiddleware, SessionLocal
 from app.errors import (
     ConflictError,
+    ForbiddenError,
     InvalidInputError,
     NotFoundError,
     QuotaExceededError,
     ServiceError,
+    UnauthorizedError,
     UpstreamError,
 )
 from app.services import languages, users
 
 _STATUS_BY_ERROR: dict[type[Exception], int] = {
+    UnauthorizedError: status.HTTP_401_UNAUTHORIZED,
+    ForbiddenError: status.HTTP_403_FORBIDDEN,
     NotFoundError: status.HTTP_404_NOT_FOUND,
     ConflictError: status.HTTP_409_CONFLICT,
     InvalidInputError: 422,
@@ -35,8 +39,10 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 
 
 async def _service_error_handler(_request: Request, exc: Exception) -> JSONResponse:
-    code = _STATUS_BY_ERROR.get(type(exc), status.HTTP_400_BAD_REQUEST)
-    return JSONResponse({"detail": str(exc)}, status_code=code)
+    assert isinstance(exc, ServiceError)
+    http_status = _STATUS_BY_ERROR.get(type(exc), status.HTTP_400_BAD_REQUEST)
+    body = {"detail": str(exc), "code": exc.code, "params": exc.params}
+    return JSONResponse(body, status_code=http_status)
 
 
 def create_app() -> FastAPI:

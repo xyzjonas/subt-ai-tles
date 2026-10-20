@@ -145,6 +145,7 @@ def test_quota_blocks_new_work(
 
     assert upload.status_code == 429
     assert retranslate.status_code == 429
+    assert upload.json()["code"] == "quota_exceeded"
     assert client.get("/api/usage", auth=hal).json()["quota"]["remaining"] == 0
 
 
@@ -157,7 +158,9 @@ def test_unlisted_model_is_rejected(client: TestClient, make_user: Callable) -> 
     try:
         r = client.post(
             "/api/jobs",
-            files={"file": ("movie.srt", b"1\n00:00:01,000 --> 00:00:02,000\nHi\n", "text/plain")},
+            files={
+                "file": ("movie.srt", b"1\n00:00:01,000 --> 00:00:02,000\nHi\n", "text/plain")
+            },
             data={"sourceLang": "en", "targetLang": "de"},
             auth=ivy,
         )

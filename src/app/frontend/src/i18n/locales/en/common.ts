@@ -1,0 +1,43 @@
+export default {
+  nav: {
+    label: "Primary",
+    translate: "Translate",
+    requests: "My requests",
+    dashboard: "Dashboard",
+    signOut: "Sign out",
+    back: "Back",
+    account: "Account and settings",
+  },
+  routes: {
+    login: "Sign in",
+    changePassword: "Change password",
+    translate: "Translate .srt",
+    requests: "My requests",
+    dashboard: "Dashboard",
+    editor: "Export & Format",
+    job: "Translating",
+    editorSubtitle: "subt-ai-tles editor",
+  },
+  locale: {
+    auto: "Automatic (browser)",
+    setting: "Language",
+    flag: "Language: {name}",
+    label: "Language",
+    names: { en: "English", cs: "Čeština" },
+  },
+  time: {
+    hours: "{n}h",
+    minutes: "{n}m",
+    seconds: "{n}s",
+    today: "Today, {time}",
+    yesterday: "Yesterday, {time}",
+  },
+  loading: "Loading…",
+  retry: "Retry",
+  status: {
+    ready: "Ready",
+    processing: "Processing",
+    failed: "Failed",
+  },
+  cues: "{count} cue | {count} cues",
+};

@@ -29,6 +29,7 @@ const PATHS = {
   terminal: "M4 5h16v14H4V5Zm4 4 3 3-3 3m5 0h4",
   bell: "M6 16V11a6 6 0 1 1 12 0v5l2 2H4l2-2Zm4 4a2 2 0 0 0 4 0",
   stop: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM9 9l6 6m0-6-6 6",
+  alert: "M12 4 3 20h18L12 4Zm0 6v4m0 3h.01",
   retry: "M4 12a8 8 0 1 0 3-6.2M4 4v5h5",
 } as const;
 

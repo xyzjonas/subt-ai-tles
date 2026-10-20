@@ -1,18 +1,19 @@
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
 import type { MilestoneState } from "../../composables/useJobProgress";
 import AppIcon from "../ui/AppIcon.vue";
 import StatusBadge from "../ui/StatusBadge.vue";
 
 defineProps<{ steps: { title: string; detail: string; state: MilestoneState }[] }>();
 
-const LABEL: Record<MilestoneState, string> = { done: "Done", active: "Processing", pending: "Pending", skipped: "Skipped" };
+const { t } = useI18n();
 </script>
 
 <template>
   <section class="card" aria-labelledby="milestones-title">
     <header class="head">
-      <h2 id="milestones-title">Progress</h2>
-      <StatusBadge>{{ steps.length }} Steps</StatusBadge>
+      <h2 id="milestones-title">{{ t("progress.milestones.title") }}</h2>
+      <StatusBadge>{{ t("progress.milestones.steps", { count: steps.length }, steps.length) }}</StatusBadge>
     </header>
 
     <ol class="steps">
@@ -25,7 +26,7 @@ const LABEL: Record<MilestoneState, string> = { done: "Done", active: "Processin
           <strong>{{ step.title }}</strong>
           <small class="mono">{{ step.detail }}</small>
         </div>
-        <span class="state">{{ LABEL[step.state] }}</span>
+        <span class="state">{{ t(`progress.milestones.state.${step.state}`) }}</span>
       </li>
     </ol>
   </section>

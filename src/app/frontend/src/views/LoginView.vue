@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
+import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 import { login } from "../api/auth";
-import { ApiError } from "../api/http";
+import { describeError } from "../i18n/apiErrors";
 import AppIcon from "../components/ui/AppIcon.vue";
+import LocaleSwitch from "../components/ui/LocaleSwitch.vue";
 
+const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 
@@ -26,7 +29,7 @@ async function submit() {
     await login(username.value, password.value);
     await router.replace(destination.value);
   } catch (e) {
-    error.value = e instanceof ApiError && e.status === 401 ? "Wrong username or password." : "Could not sign in. Please try again.";
+    error.value = describeError(e, "auth.login.failed");
   } finally {
     submitting.value = false;
   }
@@ -35,28 +38,35 @@ async function submit() {
 
 <template>
   <main class="page">
+    <LocaleSwitch class="locale" />
     <form class="card" @submit.prevent="submit">
       <span class="emblem"><AppIcon name="translate" :size="22" /></span>
-      <h1>Sign in</h1>
-      <p class="lead">to continue to subt-ai-tles</p>
+      <h1>{{ t("auth.login.title") }}</h1>
+      <p class="lead">{{ t("auth.login.lead") }}</p>
 
       <label>
-        Username
+        {{ t("auth.login.username") }}
         <input v-model="username" type="text" name="username" autocomplete="username" autocapitalize="none" required autofocus />
       </label>
       <label>
-        Password
+        {{ t("auth.login.password") }}
         <input v-model="password" type="password" name="password" autocomplete="current-password" required />
       </label>
 
       <p v-if="error" class="error" role="alert">{{ error }}</p>
 
-      <button type="submit" :disabled="submitting">{{ submitting ? "Signing in…" : "Sign in" }}</button>
+      <button type="submit" :disabled="submitting">{{ submitting ? t("auth.login.submitting") : t("auth.login.submit") }}</button>
     </form>
   </main>
 </template>
 
 <style scoped>
+.locale {
+  position: fixed;
+  top: 16px;
+  right: var(--page-padding);
+}
+
 .page {
   display: grid;
   place-items: center;

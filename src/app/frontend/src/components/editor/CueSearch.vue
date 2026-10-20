@@ -19,7 +19,7 @@ onUnmounted(() => window.removeEventListener("keydown", onKeydown));
 <template>
   <label class="search">
     <AppIcon name="search" :size="18" />
-    <input ref="input" v-model="model" type="search" placeholder="Search line text or #cue number..." aria-label="Search cues" />
+    <input ref="input" v-model="model" type="search" :placeholder="$t('editor.search.placeholder')" :aria-label="$t('editor.search.label')" />
     <kbd class="mono">⌘K</kbd>
   </label>
 </template>

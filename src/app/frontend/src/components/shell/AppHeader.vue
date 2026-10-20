@@ -2,6 +2,7 @@
 import { useRouter } from "vue-router";
 import { clearSession } from "../../api/session";
 import AppIcon from "../ui/AppIcon.vue";
+import LocaleSwitch from "../ui/LocaleSwitch.vue";
 import StatusBadge from "../ui/StatusBadge.vue";
 
 defineProps<{ subtitle: string }>();
@@ -24,16 +25,17 @@ function signOut() {
           <small>{{ subtitle }}</small>
         </span>
       </RouterLink>
-      <nav class="nav" aria-label="Primary">
-        <RouterLink to="/">Translate</RouterLink>
-        <RouterLink to="/requests">My requests</RouterLink>
-        <RouterLink to="/dashboard">Dashboard</RouterLink>
+      <nav class="nav" :aria-label="$t('nav.label')">
+        <RouterLink to="/">{{ $t("nav.translate") }}</RouterLink>
+        <RouterLink to="/requests">{{ $t("nav.requests") }}</RouterLink>
+        <RouterLink to="/dashboard">{{ $t("nav.dashboard") }}</RouterLink>
       </nav>
+      <LocaleSwitch />
       <button
         type="button"
         class="avatar"
-        aria-label="Sign out"
-        title="Sign out"
+        :aria-label="$t('nav.signOut')"
+        :title="$t('nav.signOut')"
         @click="signOut"
       >
         <AppIcon name="user" :size="18" />

@@ -1,7 +1,8 @@
 import { computed, onMounted, reactive, ref } from "vue";
 import { getSettings, updateSettings } from "../api/settings";
 import type { AppSettings } from "../api/types";
-import { ApiError } from "../api/http";
+import { t } from "../i18n";
+import { describeError } from "../i18n/apiErrors";
 
 export function useAdminSettings() {
   const saved = ref<AppSettings | null>(null);
@@ -21,7 +22,7 @@ export function useAdminSettings() {
     try {
       adopt(await getSettings());
     } catch {
-      error.value = "Could not load the settings.";
+      error.value = t("dashboard.settings.loadFailed");
     } finally {
       loading.value = false;
     }
@@ -38,7 +39,7 @@ export function useAdminSettings() {
       adopt(await updateSettings({ model: draft.model, temperature: draft.temperature }));
       justSaved.value = true;
     } catch (e) {
-      error.value = e instanceof ApiError ? e.message : "Could not save the settings.";
+      error.value = describeError(e, "dashboard.settings.saveFailed");
     } finally {
       saving.value = false;
     }

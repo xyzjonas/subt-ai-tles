@@ -10,7 +10,7 @@ from app.schemas.usage import (
     UsageRecordOut,
     UsageSummary,
 )
-from app.schemas.user import UserCreate, UserOut, UserUpdate
+from app.schemas.user import PasswordChange, ProfileUpdate, UserCreate, UserOut, UserUpdate
 
 __all__ = [
     "AppSettingsIn",
@@ -26,6 +26,8 @@ __all__ = [
     "ModelOption",
     "ModelRateIn",
     "ModelRateOut",
+    "PasswordChange",
+    "ProfileUpdate",
     "QuotaOut",
     "RetranslateRequest",
     "UsageBucket",

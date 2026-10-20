@@ -1,10 +1,13 @@
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
 import { formatSize } from "../../utils/srt";
 import AppIcon from "../ui/AppIcon.vue";
 import StatusBadge from "../ui/StatusBadge.vue";
 
 defineProps<{ file: File; cueCount: number }>();
 defineEmits<{ remove: [] }>();
+
+const { t } = useI18n();
 </script>
 
 <template>
@@ -12,13 +15,13 @@ defineEmits<{ remove: [] }>();
     <span class="icon"><AppIcon name="file" /></span>
     <div class="info">
       <p class="name mono">{{ file.name }}</p>
-      <p class="meta">{{ formatSize(file.size) }} • {{ cueCount.toLocaleString() }} dialogue cues</p>
+      <p class="meta">{{ formatSize(file.size) }} • {{ t("translate.file.cueCount", { count: cueCount }, cueCount) }}</p>
       <div class="tags">
-        <StatusBadge tone="success" dot>Validated UTF-8</StatusBadge>
-        <StatusBadge>Encoding: OK</StatusBadge>
+        <StatusBadge tone="success" dot>{{ t("translate.file.validated") }}</StatusBadge>
+        <StatusBadge>{{ t("translate.file.encodingOk") }}</StatusBadge>
       </div>
     </div>
-    <button type="button" class="remove" aria-label="Remove file" @click="$emit('remove')">
+    <button type="button" class="remove" :aria-label="t('translate.file.remove')" @click="$emit('remove')">
       <AppIcon name="close" :size="16" />
     </button>
   </div>

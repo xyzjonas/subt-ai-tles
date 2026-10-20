@@ -13,8 +13,8 @@ onMounted(async () => {
 <template>
   <section class="recent" aria-labelledby="recent-heading">
     <div class="head">
-      <h2 id="recent-heading">Recent subtitle jobs</h2>
-      <RouterLink to="/requests">View all</RouterLink>
+      <h2 id="recent-heading">{{ $t("translate.recent.title") }}</h2>
+      <RouterLink to="/requests">{{ $t("translate.recent.viewAll") }}</RouterLink>
     </div>
     <ul class="list">
       <li v-for="job in jobs" :key="job.id"><JobListItem :job="job" /></li>

@@ -1,22 +1,19 @@
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
 import type { CueFilter } from "../../composables/useCueEditor";
 import PillOption from "../ui/PillOption.vue";
 
 const model = defineModel<CueFilter>({ required: true });
 defineProps<{ counts: Record<CueFilter, number> }>();
 
-const TABS: { value: CueFilter; label: string }[] = [
-  { value: "all", label: "All lines" },
-  { value: "modified", label: "Modified" },
-  { value: "flagged", label: "Flagged" },
-  { value: "cps", label: "High CPS" },
-];
+const { t, n } = useI18n();
+const TABS: CueFilter[] = ["all", "modified", "flagged", "cps"];
 </script>
 
 <template>
-  <div class="filters" role="group" aria-label="Filter cues">
-    <PillOption v-for="t in TABS" :key="t.value" :active="model === t.value" @click="model = t.value">
-      {{ t.label }} ({{ counts[t.value].toLocaleString() }})
+  <div class="filters" role="group" :aria-label="t('editor.filters.label')">
+    <PillOption v-for="tab in TABS" :key="tab" :active="model === tab" @click="model = tab">
+      {{ t("editor.filters.item", { label: t(`editor.filters.${tab}`), count: n(counts[tab]) }) }}
     </PillOption>
   </div>
 </template>

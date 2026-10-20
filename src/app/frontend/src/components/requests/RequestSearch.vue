@@ -7,7 +7,7 @@ const model = defineModel<string>({ required: true });
 <template>
   <label class="search">
     <AppIcon name="search" :size="18" />
-    <input v-model="model" type="search" placeholder="Search files or languages..." aria-label="Search requests" />
+    <input v-model="model" type="search" :placeholder="$t('requests.search.placeholder')" :aria-label="$t('requests.search.label')" />
   </label>
 </template>
 

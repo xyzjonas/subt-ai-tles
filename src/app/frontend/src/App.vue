@@ -13,8 +13,8 @@ const bare = computed(() => route.meta.layout === "bare");
 <template>
   <RouterView v-if="bare" />
   <div v-else class="shell">
-    <StackHeader v-if="stack" :title="String(route.meta.title)" :subtitle="String(route.meta.subtitle)" back-to="/requests" />
-    <AppHeader v-else :subtitle="String(route.meta.subtitle ?? '')" />
+    <StackHeader v-if="stack" :title="$t(String(route.meta.title))" :subtitle="$t(String(route.meta.subtitle))" back-to="/requests" />
+    <AppHeader v-else :subtitle="route.meta.subtitle ? $t(String(route.meta.subtitle)) : ''" />
     <main class="content" :class="{ stack }">
       <RouterView />
     </main>

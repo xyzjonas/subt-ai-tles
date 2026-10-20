@@ -7,12 +7,12 @@ defineProps<{ title: string; subtitle: string; backTo: string }>();
 <template>
   <header class="header">
     <div class="bar">
-      <RouterLink :to="backTo" class="back" aria-label="Back"><AppIcon name="back" :size="18" /></RouterLink>
+      <RouterLink :to="backTo" class="back" :aria-label="$t('nav.back')"><AppIcon name="back" :size="18" /></RouterLink>
       <h1>
         <strong>{{ title }}</strong>
         <small>{{ subtitle }}</small>
       </h1>
-      <button type="button" class="avatar" aria-label="Account and settings">
+      <button type="button" class="avatar" :aria-label="$t('nav.account')">
         <AppIcon name="user" :size="18" />
       </button>
     </div>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { UsageRecord } from "../../api/types";
 import { formatWhen } from "../../utils/srt";
-import { KIND_LABEL, formatCredits, formatTokens } from "../../utils/usage";
+import { formatCredits, formatTokens, kindLabel } from "../../utils/usage";
 
 defineProps<{ records: UsageRecord[]; hasMore: boolean; loadingMore: boolean }>();
 defineEmits<{ more: [] }>();
@@ -9,20 +9,20 @@ defineEmits<{ more: [] }>();
 
 <template>
   <section class="records" aria-labelledby="records-title">
-    <h2 id="records-title">Requests</h2>
+    <h2 id="records-title">{{ $t("dashboard.records.title") }}</h2>
 
-    <p v-if="!records.length" class="empty">No requests yet. Translate a file to see its usage here.</p>
+    <p v-if="!records.length" class="empty">{{ $t("dashboard.records.empty") }}</p>
     <template v-else>
       <div class="scroll">
         <table>
           <thead>
             <tr>
-              <th scope="col">When</th>
-              <th scope="col">Type</th>
-              <th scope="col">Model</th>
-              <th scope="col" class="num">Prompt</th>
-              <th scope="col" class="num">Completion</th>
-              <th scope="col" class="num">Credits</th>
+              <th scope="col">{{ $t("dashboard.records.when") }}</th>
+              <th scope="col">{{ $t("dashboard.records.type") }}</th>
+              <th scope="col">{{ $t("dashboard.records.model") }}</th>
+              <th scope="col" class="num">{{ $t("dashboard.records.prompt") }}</th>
+              <th scope="col" class="num">{{ $t("dashboard.records.completion") }}</th>
+              <th scope="col" class="num">{{ $t("dashboard.records.credits") }}</th>
             </tr>
           </thead>
           <tbody>
@@ -30,7 +30,7 @@ defineEmits<{ more: [] }>();
               <td>
                 <time :datetime="r.createdAt">{{ formatWhen(r.createdAt) }}</time>
               </td>
-              <td>{{ KIND_LABEL[r.kind] }}</td>
+              <td>{{ kindLabel(r.kind) }}</td>
               <td class="mono">{{ r.model }}</td>
               <td class="num mono">{{ formatTokens(r.promptTokens) }}</td>
               <td class="num mono">{{ formatTokens(r.completionTokens) }}</td>
@@ -40,7 +40,7 @@ defineEmits<{ more: [] }>();
         </table>
       </div>
       <button v-if="hasMore" type="button" class="more" :disabled="loadingMore" @click="$emit('more')">
-        {{ loadingMore ? "Loading…" : "Show more" }}
+        {{ loadingMore ? $t("loading") : $t("dashboard.records.more") }}
       </button>
     </template>
   </section>

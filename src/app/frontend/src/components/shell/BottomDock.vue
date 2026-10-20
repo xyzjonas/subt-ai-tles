@@ -3,18 +3,18 @@ import AppIcon from "../ui/AppIcon.vue";
 </script>
 
 <template>
-  <nav class="dock" aria-label="Primary">
+  <nav class="dock" :aria-label="$t('nav.label')">
     <RouterLink to="/" class="tab">
       <AppIcon name="translate" />
-      Translate
+      {{ $t("nav.translate") }}
     </RouterLink>
     <RouterLink to="/requests" class="tab">
       <AppIcon name="list" />
-      My requests
+      {{ $t("nav.requests") }}
     </RouterLink>
     <RouterLink to="/dashboard" class="tab">
       <AppIcon name="user" />
-      Dashboard
+      {{ $t("nav.dashboard") }}
     </RouterLink>
   </nav>
 </template>

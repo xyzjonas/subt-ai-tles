@@ -1,5 +1,6 @@
 import { computed, ref } from "vue";
 import { detectLanguage } from "../api/languages";
+import { t } from "../i18n";
 import { parseSrt } from "../utils/srt";
 
 export function useSrtFile() {
@@ -19,7 +20,7 @@ export function useSrtFile() {
       detectedLang.value = await detectLanguage(candidate);
     } catch (e) {
       clear();
-      error.value = e instanceof Error ? e.message : "Could not read file.";
+      error.value = e instanceof Error ? e.message : t("translate.file.unreadable");
     } finally {
       loading.value = false;
     }

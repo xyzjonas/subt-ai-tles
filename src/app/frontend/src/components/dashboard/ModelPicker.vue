@@ -1,27 +1,33 @@
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
 import type { ModelOption } from "../../api/types";
 import { formatCredits } from "../../utils/usage";
 
 const model = defineModel<string>({ required: true });
 defineProps<{ models: ModelOption[] }>();
+
+const { t, te } = useI18n();
+
+/** Localized description by model id; models added later fall back to the backend's text. */
+function description(m: ModelOption): string {
+  const key = `dashboard.models.${m.id.replace(/[.-]/g, "_")}`;
+  return te(key) ? t(key) : m.description;
+}
 </script>
 
 <template>
   <fieldset class="picker">
-    <legend>Translation model</legend>
-    <p class="hint">
-      The AI model that translates every request, for all users. Cheaper models use fewer credits from each person's
-      monthly quota.
-    </p>
+    <legend>{{ t("dashboard.models.legend") }}</legend>
+    <p class="hint">{{ t("dashboard.models.hint") }}</p>
     <div class="cards">
       <label v-for="m in models" :key="m.id" class="card">
         <input v-model="model" type="radio" name="model" :value="m.id" />
         <span class="body">
           <strong>{{ m.label }}</strong>
-          <span class="description">{{ m.description }}</span>
+          <span class="description">{{ description(m) }}</span>
           <span class="rates mono">
-            {{ formatCredits(m.inputCreditsPer1K) }} in · {{ formatCredits(m.outputCreditsPer1K) }} out
-            <small>credits per 1K tokens</small>
+            {{ t("dashboard.models.rates", { input: formatCredits(m.inputCreditsPer1K), output: formatCredits(m.outputCreditsPer1K) }) }}
+            <small>{{ t("dashboard.models.ratesUnit") }}</small>
           </span>
         </span>
       </label>

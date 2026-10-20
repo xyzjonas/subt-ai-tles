@@ -9,13 +9,13 @@ defineEmits<{ download: []; sync: [] }>();
   <div class="bar">
     <div class="inner">
       <button type="button" class="primary" @click="$emit('download')">
-        <AppIcon name="check" :size="18" /> Download Complete SRT
+        <AppIcon name="check" :size="18" /> {{ $t("editor.actionBar.download") }}
       </button>
       <button
         type="button"
         class="sync"
         :disabled="syncing"
-        aria-label="Re-sync all lines"
+        :aria-label="$t('editor.actionBar.sync')"
         @click="$emit('sync')"
       >
         <AppIcon name="sync" :size="16" />
