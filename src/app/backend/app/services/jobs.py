@@ -1,4 +1,5 @@
 import logging
+import re
 from datetime import timedelta
 from pathlib import PurePath
 
@@ -28,6 +29,14 @@ def get(db: Session, user: User, job_id: str) -> Job:
         msg = "Job not found"
         raise NotFoundError(ErrorCode.JOB_NOT_FOUND, msg)
     return job
+
+
+_LANG_SUFFIX = re.compile(r"\.[a-z]{2,3}(?:[-_][A-Za-z]{2})?(?=\.srt$)")
+
+
+def _sanitize_file_name(file_name: str) -> str:
+    """Drop a language code (".en", ".pt-BR") right before the .srt extension."""
+    return _LANG_SUFFIX.sub("", PurePath(file_name).name)
 
 
 def _parse_srt(file_name: str, content: bytes) -> list[srt.Subtitle]:
@@ -71,10 +80,11 @@ def create(
         raise InvalidInputError(ErrorCode.UNKNOWN_LANGUAGE, msg, language=target_lang)
     usage.rate_for(db, app_settings.get(db).model)
     usage.ensure_within_quota(db, user)
-    subtitles = _parse_srt(PurePath(file_name).name, content)
+    file_name = _sanitize_file_name(file_name)
+    subtitles = _parse_srt(file_name, content)
     job = Job(
         owner_id=user.id,
-        file_name=PurePath(file_name).name,
+        file_name=file_name,
         target_lang=target_lang,
         cue_count=len(subtitles),
     )

@@ -368,3 +368,19 @@ def test_user_locale(client: TestClient) -> None:
         u["username"]: u["locale"] for u in client.get("/api/admin/users", auth=ADMIN).json()
     }
     assert listed["lenka"] is None
+
+
+@pytest.mark.parametrize(
+    ("name", "expected"),
+    [
+        ("movie.en.srt", "movie.srt"),
+        ("movie.pt-BR.srt", "movie.srt"),
+        ("movie.eng.SRT".replace("SRT", "srt"), "movie.srt"),
+        ("movie.srt", "movie.srt"),
+        ("Dr.Who.srt", "Dr.Who.srt"),
+    ],
+)
+def test_sanitize_file_name(name: str, expected: str) -> None:
+    from app.services.jobs import _sanitize_file_name
+
+    assert _sanitize_file_name(name) == expected
