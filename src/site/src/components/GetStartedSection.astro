@@ -1,0 +1,61 @@
+---
+import CopyCommand from "./CopyCommand.vue";
+import SectionHeader from "./SectionHeader.astro";
+import { QUICKSTART_COMMAND } from "../utils/site";
+import type { Messages } from "../i18n/en";
+
+interface Props {
+  t: Messages["start"];
+}
+
+const { t } = Astro.props;
+---
+
+<section id="get-started" class="section" aria-labelledby="start-title">
+  <div id="start-title">
+    <SectionHeader eyebrow={t.eyebrow} title={t.title} subtitle={t.subtitle} />
+  </div>
+  <CopyCommand
+    client:visible
+    lines={QUICKSTART_COMMAND}
+    label={t.terminalLabel}
+    copyText={t.copy}
+    copiedText={t.copied}
+  />
+  <p class="after">{t.after}</p>
+  <ul class="checklist">
+    {t.checklist.map((item) => <li>{item}</li>)}
+  </ul>
+</section>
+
+<style>
+  .section {
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: 5rem 1.5rem 0;
+    scroll-margin-top: 1rem;
+  }
+  .after {
+    margin-top: 1rem;
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+  .checklist {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 24px;
+    margin: 1.25rem 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+  .checklist li::before {
+    content: "✓";
+    margin-right: 6px;
+    color: var(--success);
+  }
+</style>

@@ -73,7 +73,6 @@ async def get_translation_request(
         from mediasorter import TvShowMetadata, whats_this  # noqa: PLC0415
         from mediasorter.lib.config import default_config  # noqa: PLC0415
 
-        metadata_providers_map = {}
         for provider in default_config.api:
             if provider.name == "tmdb":
                 provider.key = env.TMDB_API_KEY

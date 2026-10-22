@@ -5,6 +5,7 @@ import pytest
 from app.db import SessionLocal
 from app.models import Job, JobStage
 from app.services import translation
+from app.services.jobs import _sanitize_file_name
 from fastapi.testclient import TestClient
 
 from tests.conftest import ADMIN, SRT, FakeQueue, StubTranslator
@@ -381,6 +382,4 @@ def test_user_locale(client: TestClient) -> None:
     ],
 )
 def test_sanitize_file_name(name: str, expected: str) -> None:
-    from app.services.jobs import _sanitize_file_name
-
     assert _sanitize_file_name(name) == expected

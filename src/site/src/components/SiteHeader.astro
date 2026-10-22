@@ -1,0 +1,91 @@
+---
+import Icon from "./Icon.astro";
+import LocaleSwitch from "./LocaleSwitch.astro";
+import { REPO_URL, type Locale } from "../utils/site";
+import type { Messages } from "../i18n/en";
+
+interface Props {
+  locale: Locale;
+  t: Messages["header"];
+}
+
+const { locale, t } = Astro.props;
+---
+
+<header class="bar">
+  <div class="brand">
+    <Icon name="logo" size={28} />
+    <span class="name">subt-ai-tles</span>
+    <span class="pill">{t.license}</span>
+  </div>
+  <nav class="actions" aria-label={t.nav}>
+    <LocaleSwitch current={locale} label={t.language} />
+    <a class="github" href={REPO_URL} aria-label={t.githubLabel}>
+      <Icon name="github" size={16} />
+      <span>GitHub</span>
+      <span class="divider" aria-hidden="true"></span>
+      <span>★ {t.star}</span>
+    </a>
+  </nav>
+</header>
+
+<style>
+  .bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: 1.5rem;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .name {
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .pill {
+    padding: 2px 8px;
+    border-radius: 9999px;
+    background: #f1f5f9;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .github {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: 9999px;
+    background: var(--surface);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: box-shadow 0.15s;
+  }
+  .github:hover {
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.1);
+  }
+  .divider {
+    width: 1px;
+    height: 14px;
+    background: var(--border);
+  }
+  @media (max-width: 480px) {
+    .pill,
+    .github span:nth-of-type(1) {
+      display: none;
+    }
+  }
+</style>

@@ -161,6 +161,7 @@ cython_debug/
 
 # Frontend
 node_modules/
+src/site/.astro/
 src/app/frontend/dist/
 
 # App database

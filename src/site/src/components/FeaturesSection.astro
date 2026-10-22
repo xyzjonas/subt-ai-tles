@@ -1,0 +1,93 @@
+---
+import Icon, { type IconName } from "./Icon.astro";
+import SectionHeader from "./SectionHeader.astro";
+import type { Messages } from "../i18n/en";
+
+interface Props {
+  t: Messages["features"];
+}
+
+const { t } = Astro.props;
+---
+
+<section class="section" aria-labelledby="features-title">
+  <div id="features-title">
+    <SectionHeader eyebrow={t.eyebrow} title={t.title} subtitle={t.subtitle} />
+  </div>
+  <ul class="grid">
+    {
+      t.cards.map((card) => (
+        <li class="card">
+          <span class={`icon ${card.tint}`}>
+            <Icon name={card.icon as IconName} size={22} />
+          </span>
+          <h3>{card.title}</h3>
+          <p>{card.text}</p>
+          <code>{card.tag}</code>
+        </li>
+      ))
+    }
+  </ul>
+</section>
+
+<style>
+  .section {
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: 4rem 1.5rem 0;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+    gap: 1.5rem;
+    max-width: 64rem;
+    margin: 0 auto;
+    padding: 0;
+    list-style: none;
+  }
+  .card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    background: var(--surface);
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  }
+  .icon {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+  }
+  .violet { background: #ede9fe; color: #6d28d9; }
+  .cyan { background: #cffafe; color: #0e7490; }
+  .amber { background: #fef3c7; color: #b45309; }
+  .blue { background: #dbeafe; color: #1d4ed8; }
+  .green { background: #d1fae5; color: #047857; }
+  h3 {
+    margin-top: 4px;
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+  p {
+    flex: 1;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+  code {
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: var(--surface-subdued);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: #475569;
+  }
+</style>

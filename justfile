@@ -69,3 +69,7 @@ worker:
 
 redis:
     docker run -it --rm -p 6379:6379 redis:7-alpine
+
+[working-directory: 'src/site']
+website:
+  npm run dev

@@ -1,0 +1,93 @@
+@import "@fontsource-variable/plus-jakarta-sans";
+@import "@fontsource-variable/jetbrains-mono";
+
+:root {
+  --canvas: #f7f9fb;
+  --surface: #ffffff;
+  --surface-subdued: #f1f4f9;
+  --border: #e2e8f0;
+  --border-soft: #e8edf5;
+
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+  --primary-deep: #3730a3;
+  --primary-tint: #ede9fe;
+  --primary-tint-border: #ddd6fe;
+  --primary-soft: #e0e7ff;
+  --primary-glow: 0 4px 14px rgba(79, 70, 229, 0.25);
+
+  --success: #10b981;
+  --success-bg: #d1fae5;
+  --success-text: #065f46;
+  --success-border: #a7f3d0;
+  --warning: #f59e0b;
+  --warning-bg: #fffbeb;
+  --warning-strong: #d97706;
+
+  --terminal: #0f172a;
+
+  --text: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --text-placeholder: #94a3b8;
+
+  --font-ui: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono Variable", "JetBrains Mono", "SF Mono", Menlo, monospace;
+
+  --radius-card: 16px;
+  --radius-button: 12px;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-tag: 3px;
+  --primary-glow-soft: rgba(79, 70, 229, 0.15);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--canvas);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}

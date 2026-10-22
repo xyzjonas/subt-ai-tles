@@ -1,0 +1,65 @@
+---
+import Icon from "./Icon.astro";
+import { LICENSE_URL, RELEASES_URL, REPO_URL } from "../utils/site";
+import type { Messages } from "../i18n/en";
+
+interface Props {
+  t: Messages["footer"];
+}
+
+const { t } = Astro.props;
+const year = new Date().getFullYear();
+---
+
+<footer class="footer">
+  <div class="about">
+    <p class="brand"><Icon name="logo" size={24} /> subt-ai-tles</p>
+    <p class="description">{t.description}</p>
+  </div>
+  <nav class="links">
+    <a href={REPO_URL}>{t.github}</a>
+    <a href={RELEASES_URL}>{t.changelog}</a>
+    <a href={LICENSE_URL}>{t.license}</a>
+    <span>© {year} {t.copyright}</span>
+  </nav>
+</footer>
+
+<style>
+  .footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    max-width: 72rem;
+    margin: 5rem auto 0;
+    padding: 2rem 1.5rem 3rem;
+    border-top: 1px solid var(--border);
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+  }
+  .description {
+    max-width: 28rem;
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .links a {
+    text-decoration: none;
+    color: var(--text-secondary);
+  }
+  .links a:hover {
+    color: var(--primary);
+  }
+</style>

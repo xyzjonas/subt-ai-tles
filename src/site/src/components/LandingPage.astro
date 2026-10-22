@@ -1,0 +1,40 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import CuePreview from "./preview/CuePreview.vue";
+import FeaturesSection from "./FeaturesSection.astro";
+import GetStartedSection from "./GetStartedSection.astro";
+import HeroSection from "./HeroSection.astro";
+import SiteFooter from "./SiteFooter.astro";
+import SiteHeader from "./SiteHeader.astro";
+import WorkflowSection from "./WorkflowSection.astro";
+import { cs } from "../i18n/cs";
+import { en } from "../i18n/en";
+import type { Locale } from "../utils/site";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = locale === "cs" ? cs : en;
+---
+
+<BaseLayout locale={locale} title={t.meta.title} description={t.meta.description}>
+  <SiteHeader locale={locale} t={t.header} />
+  <main>
+    <HeroSection t={t.hero} />
+    <div class="preview">
+      <CuePreview client:visible t={t.preview} locale={locale} />
+    </div>
+    <FeaturesSection t={t.features} />
+    <WorkflowSection t={t.workflow} />
+    <GetStartedSection t={t.start} />
+  </main>
+  <SiteFooter t={t.footer} />
+</BaseLayout>
+
+<style>
+  .preview {
+    padding: 0 1.5rem;
+  }
+</style>

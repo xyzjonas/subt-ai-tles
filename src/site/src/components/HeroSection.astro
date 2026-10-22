@@ -1,0 +1,122 @@
+---
+import Icon from "./Icon.astro";
+import { REPO_URL } from "../utils/site";
+import type { Messages } from "../i18n/en";
+
+interface Props {
+  t: Messages["hero"];
+}
+
+const { t } = Astro.props;
+---
+
+<section class="hero">
+  <p class="badge"><Icon name="spark" size={14} /> {t.badge}</p>
+  <h1>{t.titleBefore} <span>{t.titleAccent}</span></h1>
+  <p class="subtitle">{t.subtitle}</p>
+  <div class="cta">
+    <a class="button primary" href="#get-started"><Icon name="docker" size={20} /> {t.deploy}</a>
+    <a class="button secondary" href={REPO_URL}><Icon name="github" size={18} /> {t.star}</a>
+  </div>
+  <ul class="trust">
+    {t.trust.map((item) => <li>{item}</li>)}
+  </ul>
+</section>
+
+<style>
+  .hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 2.5rem;
+    text-align: center;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 14px;
+    border: 1px solid var(--primary-tint-border);
+    border-radius: 9999px;
+    background: var(--primary-tint);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--primary);
+  }
+  h1 {
+    max-width: 48rem;
+    margin-top: 1.5rem;
+    font-size: clamp(2.25rem, 5vw + 1rem, 3.25rem);
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    line-height: 1.15;
+  }
+  h1 span {
+    color: var(--primary);
+  }
+  .subtitle {
+    max-width: 42rem;
+    margin-top: 1.25rem;
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+  }
+  .cta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 2rem;
+  }
+  .button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: var(--radius-button);
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.15s, box-shadow 0.15s;
+  }
+  .primary {
+    background: var(--primary-deep);
+    color: #fff;
+    box-shadow: var(--primary-glow);
+  }
+  .primary:hover {
+    background: var(--primary-hover);
+  }
+  .secondary {
+    border: 1px solid #cbd5e1;
+    background: var(--surface);
+    color: #1e293b;
+  }
+  .secondary:hover {
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.1);
+  }
+  .trust {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin: 2rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .trust li {
+    padding: 4px 12px;
+    border: 1px solid var(--border);
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.7);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+  .trust li::before {
+    content: "✓";
+    margin-right: 6px;
+    color: var(--success);
+  }
+</style>
