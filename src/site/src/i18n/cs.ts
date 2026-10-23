@@ -18,7 +18,7 @@ export const cs: Messages = {
     titleBefore: "Kontextový překlad titulků",
     titleAccent: "pomocí LLM",
     subtitle:
-      "Jednoduchý nástroj na překlad soubory .srt za použití LLM. OpenAI funguje dnes, možnost rozšíření o Deepl, Gemini, Claude nebo lokálně nasazené modely... Konec čekání na komunitní překlady a titulkám co nesedí!",
+      "Jednoduchý nástroj pro překlad souborů .srt pomocí LLM. Už dnes funguje s OpenAI, brzy přibude podpora DeepL, Gemini, Claude i lokálně běžících modelů. Už nemusíte čekat na komunitní překlady ani se trápit s titulky, které nesedí!",
     deploy: "Docker Compose",
     star: "GitHub",
     trust: [
@@ -97,9 +97,9 @@ export const cs: Messages = {
   },
   features: {
     eyebrow: "Proč subt-ai-tles",
-    title: "Navrženo pro lokalizaci filmů a seriálů",
+    title: "Navrženo pro lokalizaci titulků k filmům a seriálům.",
     subtitle:
-      "Vytvořeno speciálně pro přesné časování titulků a plynulost dialogů.",
+      "Vytvořeno speciálně pro překlad přesně načasovaných titulků v původním jazyce, s možností zkontrolovat a opravit každý řádek. Poslední slovo má vždy člověk.",
     cards: [
       {
         icon: "brain",
@@ -111,7 +111,7 @@ export const cs: Messages = {
       {
         icon: "clock",
         tint: "cyan",
-        title: "Neměnné časové kódy",
+        title: "Původní časování",
         text: "Navrženo tak, aby se časové kódy a pořadí titulků vždy seděly. Časové značky na milisekundy zůstávají stejné jako ve zdroji.",
         tag: "Titulky konečně sedí!",
       },
