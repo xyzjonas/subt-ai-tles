@@ -15,14 +15,12 @@ the result cue by cue in the editor, then download the finished `.srt`.
 - Translation cache, so re-running a failed or repeated job doesn't pay for the same lines twice
 - Movie/show metadata lookup via TMDB
 
-### Homepage
-![Homepage](https://github.com/user-attachments/assets/f76df118-fbb4-4bb1-8476-13b1b0106d8a)
-
-### Detail / editor
-![Detail and editor](https://github.com/user-attachments/assets/98f25b2d-ba46-418b-aeda-8202fd3760b6)
-
-### Quotas
-![Quotas](https://github.com/user-attachments/assets/0e6a1964-978b-4653-9b2c-73640e03da36)
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/f76df118-fbb4-4bb1-8476-13b1b0106d8a" alt="Homepage" width="32%">
+  <img src="https://github.com/user-attachments/assets/98f25b2d-ba46-418b-aeda-8202fd3760b6" alt="Detail and editor" width="32%">
+  <img src="https://github.com/user-attachments/assets/0e6a1964-978b-4653-9b2c-73640e03da36" alt="Quotas" width="32%">
+</p>
+<p align="center"><sub>Homepage · Detail / editor · Quotas</sub></p>
 
 ### Running it
 Set `OPENAI_API_KEY` and `TMDB_API_KEY` (optionally `ADMIN_USERNAME` / `ADMIN_PASSWORD`) in a `.env` file, then:

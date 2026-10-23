@@ -418,7 +418,7 @@ class OpenAiTranslator:
             self.process_batch(
                 list(batch), request=request, batch_id=i, progress=progress, meter=meter
             )
-            for i, batch in enumerate(batched(uncached, self.batch_size, strict=False))
+            for i, batch in enumerate(batched(uncached, self.batch_size))
         ]
 
         all_results = dict(cached_results)
