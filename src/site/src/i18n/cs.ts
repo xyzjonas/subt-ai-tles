@@ -18,7 +18,7 @@ export const cs: Messages = {
     titleBefore: "Kontextový překlad titulků",
     titleAccent: "pomocí LLM",
     subtitle:
-      "Jednoduchý nástroj, který překládá soubory .srt za použití libovolného LLM. Dnes funguje OpenAI. Ollama, Claude a lokální llama.cpp se připravují. Žádný vendor lock-in, konec titulkám co nesedí!",
+      "Jednoduchý nástroj na překlad soubory .srt za použití LLM. OpenAI funguje dnes, možnost rozšíření o Deepl, Gemini, Claude nebo lokálně nasazené modely... Konec čekání na komunitní překlady a titulkám co nesedí!",
     deploy: "Docker Compose",
     star: "GitHub",
     trust: [
@@ -99,7 +99,7 @@ export const cs: Messages = {
     eyebrow: "Proč subt-ai-tles",
     title: "Navrženo pro lokalizaci filmů a seriálů",
     subtitle:
-      "Vytvořeno speciálně pro plynulost dialogů, časování titulků a nezávislost na modelu.",
+      "Vytvořeno speciálně pro přesné časování titulků a plynulost dialogů.",
     cards: [
       {
         icon: "brain",
@@ -112,14 +112,14 @@ export const cs: Messages = {
         icon: "clock",
         tint: "cyan",
         title: "Neměnné časové kódy",
-        text: "Navrženo tak, aby se časové kódy a pořadí titulků nikdy neposunuly. Časové značky na milisekundy zůstávají stejné jako ve zdroji.",
+        text: "Navrženo tak, aby se časové kódy a pořadí titulků vždy seděly. Časové značky na milisekundy zůstávají stejné jako ve zdroji.",
         tag: "Titulky konečně sedí!",
       },
       {
         icon: "nodes",
         tint: "amber",
         title: "Libovolný model",
-        text: "OpenAI funguje hned, ale knihovna je připravená Ollama, lokální LLM, Anthropic a vlastní endpointy kompatibilní s OpenAI se připravují.",
+        text: "OpenAI funguje hned, ale knihovna je připravená na libovolné rozšíření, např. Deepl, lokální LLM, Anthropic, Gemini, ...",
         tag: "OpenAI teď • cokoliv později",
       },
       {
@@ -156,8 +156,8 @@ export const cs: Messages = {
         tagTone: "neutral",
       },
       {
-        title: "Vyberte model, jazyk a tón",
-        text: "API OpenAI funguje hned po spuštění, Ollama, Claude a lokální endpointy se připravují.",
+        title: "Vyberte model a jazyk",
+        text: "API OpenAI (GPT-4.1 nano, GPT-5 nano, GPT-6 luna) funguje hned po spuštění, další modely budou přidávány.",
         tag: "✓ OpenAI",
         tagTone: "success",
       },
@@ -172,7 +172,7 @@ export const cs: Messages = {
   start: {
     eyebrow: "Začněte během chvilky",
     title: "Spusťte lokálně přes Docker Compose",
-    subtitle: "Webové rozhraní na localhostu na pár příkazů. Žádný databázový server k nastavování.",
+    subtitle: "Webové rozhraní na localhostu po pár příkazech. Jediny docker-compose, pár proměnných.",
     terminalLabel: "bash",
     copy: "Kopírovat",
     copied: "Zkopírováno!",
