@@ -133,6 +133,7 @@ async def test_retranslate_with_prompt_returns_single_custom_variant() -> None:
 @pytest.mark.asyncio
 async def test_translate_sums_usage_over_batches() -> None:
     translator = _translator({}, FakeResponses())
+    translator.batch_size = 30
 
     response = await translator.translate(_request(70))  # three batches
 

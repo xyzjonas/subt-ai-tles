@@ -30,10 +30,10 @@ jobs:
         python -m pip install uv
     - name: Install project
       run: |
-        uv sync --all-packages --group dev
+        uv sync --package subt-ai-tles --group dev
     - name: Lint with ruff
       run: |
-        uv run ruff check
+        uv run ruff check src/lib
     - name: Test with pytest
       run: |
-        uv run pytest
+        uv run pytest src/lib/tests

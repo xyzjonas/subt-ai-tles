@@ -14,7 +14,7 @@ from subtaitles.filesystem import (
 
 from tests.utils import MockedTranslator
 
-TOTAL_TEST_FILE_COUNT = 5
+TOTAL_TEST_FILE_COUNT = 6
 
 
 def test_find_srt_files(data: Path) -> None:
