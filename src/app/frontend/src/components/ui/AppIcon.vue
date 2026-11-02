@@ -30,6 +30,10 @@ const PATHS = {
   bell: "M6 16V11a6 6 0 1 1 12 0v5l2 2H4l2-2Zm4 4a2 2 0 0 0 4 0",
   stop: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM9 9l6 6m0-6-6 6",
   alert: "M12 4 3 20h18L12 4Zm0 6v4m0 3h.01",
+  folder: "M3 7a1 1 0 0 1 1-1h5l2 2h8a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7Z",
+  archive: "M4 5h16v4H4V5Zm1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9m-9 4h4",
+  plus: "M12 5v14M5 12h14",
+  trash: "M5 7h14M10 7V4h4v3m-8 0 1 13h10l1-13M10 11v6m4-6v6",
   retry: "M4 12a8 8 0 1 0 3-6.2M4 4v5h5",
 } as const;
 

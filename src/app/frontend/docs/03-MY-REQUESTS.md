@@ -27,6 +27,8 @@
   - Options:
     - `Processing (1)`
     - `Completed (3)`
+    - `Archived (2)` — soft-deleted requests, flat list, still openable/downloadable
+    - `Archived (2)`
   - Active tab receives white card background with subtle shadow or electric primary tint.
 
 ### C. Active / Processing Job Cards
@@ -74,3 +76,9 @@
    - Tapping `Download` directly triggers immediate client-side download of the translated `.srt` without entering detail view.
 3. **Search & Filter Behavior**:
    - Instant client-side text filtering against file names, language codes (`ES`, `JA`, `DE`), and timestamps.
+4. **Folders**:
+   - Requests can be grouped into collapsible folders shown above the ungrouped requests. Folders are created by hand (new-folder field) or automatically when mediasorter recognizes a file as a TV episode (folder named after the series).
+   - Move a request by dragging its card onto a folder (or onto the ungrouped area to take it out), or with the card's folder menu (also creates a new folder). The menu is the touch/keyboard path.
+   - Folders can be renamed or deleted; deleting only ungroups the requests.
+5. **Archive**:
+   - Completed/failed requests can be archived from the card; they leave the default history (and the Translate screen's recent list) and live in the `Archived` tab, where they can be restored. Running requests can't be archived.

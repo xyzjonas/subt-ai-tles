@@ -21,6 +21,10 @@ export interface Job {
   targetLang: string;
   cueCount: number;
   createdAt: string;
+  /** Folder the request is filed in; absent when ungrouped. */
+  folderId?: string;
+  /** When it was archived (hidden from the default history); absent when active. */
+  archivedAt?: string;
   status: JobStatus;
   /** Cues translated so far (processing jobs). */
   processedCues?: number;
@@ -34,6 +38,18 @@ export interface Job {
   confidence?: number;
   /** Why the job failed (failed jobs). */
   error?: string;
+}
+
+/** Only the fields present change; `folderId: null` takes the request out of its folder. */
+export interface JobPatch {
+  folderId?: string | null;
+  archived?: boolean;
+}
+
+export interface Folder {
+  id: string;
+  name: string;
+  createdAt: string;
 }
 
 export interface JobEstimate {
