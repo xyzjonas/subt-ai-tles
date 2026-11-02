@@ -9,6 +9,7 @@ class ErrorCode(StrEnum):
     ADMIN_ONLY = "admin_only"
 
     QUOTA_EXCEEDED = "quota_exceeded"
+    RATE_LIMITED = "rate_limited"
     MODEL_NOT_OFFERED = "model_not_offered"
     MODEL_WITHOUT_RATE = "model_without_rate"
 
@@ -71,6 +72,17 @@ class InvalidInputError(ServiceError):
 
 class QuotaExceededError(ServiceError):
     pass
+
+
+class RateLimitedError(ServiceError):
+    """Too many requests; `retry_after` is the seconds until one would be accepted."""
+
+    def __init__(self, retry_after: int) -> None:
+        minutes = max(1, -(-retry_after // 60))
+        super().__init__(
+            ErrorCode.RATE_LIMITED, "Too many requests, try again later", minutes=minutes
+        )
+        self.retry_after = retry_after
 
 
 class UpstreamError(ServiceError):

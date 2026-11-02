@@ -12,6 +12,7 @@ from app.errors import (
     InvalidInputError,
     NotFoundError,
     QuotaExceededError,
+    RateLimitedError,
     ServiceError,
     UnauthorizedError,
     UpstreamError,
@@ -25,6 +26,7 @@ _STATUS_BY_ERROR: dict[type[Exception], int] = {
     ConflictError: status.HTTP_409_CONFLICT,
     InvalidInputError: 422,
     QuotaExceededError: status.HTTP_429_TOO_MANY_REQUESTS,
+    RateLimitedError: status.HTTP_429_TOO_MANY_REQUESTS,
     UpstreamError: status.HTTP_502_BAD_GATEWAY,
 }
 
@@ -42,7 +44,10 @@ async def _service_error_handler(_request: Request, exc: Exception) -> JSONRespo
     assert isinstance(exc, ServiceError)
     http_status = _STATUS_BY_ERROR.get(type(exc), status.HTTP_400_BAD_REQUEST)
     body = {"detail": str(exc), "code": exc.code, "params": exc.params}
-    return JSONResponse(body, status_code=http_status)
+    headers = (
+        {"Retry-After": str(exc.retry_after)} if isinstance(exc, RateLimitedError) else None
+    )
+    return JSONResponse(body, status_code=http_status, headers=headers)
 
 
 def create_app() -> FastAPI:

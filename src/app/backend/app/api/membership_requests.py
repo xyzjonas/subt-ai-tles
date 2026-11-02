@@ -1,7 +1,10 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, status
 
+from app.config import settings
 from app.db import DbDep
+from app.errors import RateLimitedError
 from app.models import MembershipRequestStatus
+from app.ratelimit import RateLimiter, client_key
 from app.schemas import (
     MembershipRequestApprove,
     MembershipRequestCreate,
@@ -13,8 +16,24 @@ from app.services import membership_requests
 
 router = APIRouter(tags=["membership"])
 
+_HOUR = 3600
+submission_limiter = RateLimiter(
+    settings.membership_request_ip_limit, settings.membership_request_global_limit, _HOUR
+)
 
-@router.post("/membership-requests", status_code=status.HTTP_202_ACCEPTED)
+
+def limit_submissions(request: Request) -> None:
+    """Throttle submissions; runs before the body is validated, so malformed ones count too."""
+    retry_after = submission_limiter.hit(client_key(request))
+    if retry_after is not None:
+        raise RateLimitedError(retry_after)
+
+
+@router.post(
+    "/membership-requests",
+    status_code=status.HTTP_202_ACCEPTED,
+    dependencies=[Depends(limit_submissions)],
+)
 def submit_request(body: MembershipRequestCreate, db: DbDep) -> None:
     """Public: no sign-in. The answer is the same whether or not anything was stored."""
     membership_requests.submit(db, body)
