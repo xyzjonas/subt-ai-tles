@@ -21,6 +21,12 @@ class Settings(BaseSettings):
     # Shared by web and worker so a re-run of an interrupted job is cheap. None: no expiry,
     # the instance's LRU eviction bounds the size.
     cache_ttl_seconds: int | None = None
+    # Proxies in front of the app that append to X-Forwarded-For (the bundled nginx is one).
+    # Set to 0 when the app is reachable directly, so the header is ignored.
+    trusted_proxy_hops: int = 1
+    # Public membership request form: submissions per hour per client, and across everyone.
+    membership_request_ip_limit: int = 5
+    membership_request_global_limit: int = 30
 
 
 settings = Settings()

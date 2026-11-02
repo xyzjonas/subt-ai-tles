@@ -164,8 +164,22 @@ export interface AppSettings {
   model: string;
   /** 0 (literal, consistent) to 1 (creative, varied). */
   temperature: number;
+  /** Monthly credits a new user starts with. */
+  defaultMonthlyQuota: number;
   /** The curated models an admin can choose from. */
   models: ModelOption[];
 }
 
-export type AppSettingsUpdate = Pick<AppSettings, "model" | "temperature">;
+export type AppSettingsUpdate = Pick<AppSettings, "model" | "temperature" | "defaultMonthlyQuota">;
+
+export type MembershipRequestStatus = "pending" | "approved" | "rejected";
+
+export interface MembershipRequest {
+  id: number;
+  /** Becomes the username on approval. */
+  email: string;
+  details: string | null;
+  status: MembershipRequestStatus;
+  createdAt: string;
+  decidedAt: string | null;
+}

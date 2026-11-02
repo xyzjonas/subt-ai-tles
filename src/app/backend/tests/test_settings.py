@@ -19,6 +19,7 @@ def restore_defaults() -> Iterator[None]:
     with SessionLocal() as db:
         row = app_settings.get(db)
         row.model, row.temperature = "gpt-4.1-nano", 0.0
+        row.default_monthly_quota = 1000
         db.commit()
 
 
@@ -40,12 +41,12 @@ def test_admin_only(client: TestClient, make_user: Callable) -> None:
     kim = make_user("kim")
 
     assert client.get(URL, auth=kim).status_code == 403
-    r = client.put(URL, json={"model": "gpt-5-nano", "temperature": 0.5}, auth=kim)
+    r = client.put(URL, json={"model": "gpt-5-nano", "temperature": 0.5, "defaultMonthlyQuota": 1000}, auth=kim)
     assert r.status_code == 403
 
 
 def test_update(client: TestClient) -> None:
-    r = client.put(URL, json={"model": "gpt-5-nano", "temperature": 0.4}, auth=ADMIN)
+    r = client.put(URL, json={"model": "gpt-5-nano", "temperature": 0.4, "defaultMonthlyQuota": 1000}, auth=ADMIN)
 
     assert r.status_code == 200
     assert (r.json()["model"], r.json()["temperature"]) == ("gpt-5-nano", 0.4)
@@ -55,9 +56,10 @@ def test_update(client: TestClient) -> None:
 @pytest.mark.parametrize(
     "body",
     [
-        {"model": "gpt-unknown", "temperature": 0},
-        {"model": "gpt-5-nano", "temperature": 1.5},
-        {"model": "gpt-5-nano", "temperature": -0.1},
+        {"model": "gpt-unknown", "temperature": 0, "defaultMonthlyQuota": 1000},
+        {"model": "gpt-5-nano", "temperature": 1.5, "defaultMonthlyQuota": 1000},
+        {"model": "gpt-5-nano", "temperature": -0.1, "defaultMonthlyQuota": 1000},
+        {"model": "gpt-5-nano", "temperature": 0, "defaultMonthlyQuota": -1},
         {"model": "gpt-5-nano"},
     ],
 )
@@ -72,7 +74,7 @@ def test_model_without_rate_is_rejected(client: TestClient) -> None:
         db.delete(rate)
         db.commit()
     try:
-        r = client.put(URL, json={"model": "gpt-6-luna", "temperature": 0}, auth=ADMIN)
+        r = client.put(URL, json={"model": "gpt-6-luna", "temperature": 0, "defaultMonthlyQuota": 1000}, auth=ADMIN)
     finally:
         with SessionLocal() as db:
             db.add(
@@ -118,7 +120,7 @@ def test_job_uses_configured_model(
     translator: StubTranslator,
 ) -> None:
     mia = make_user("mia")
-    client.put(URL, json={"model": "gpt-6-luna", "temperature": 0.4}, auth=ADMIN)
+    client.put(URL, json={"model": "gpt-6-luna", "temperature": 0.4, "defaultMonthlyQuota": 1000}, auth=ADMIN)
 
     _finish(client, queue, mia, _upload(client, mia)["id"])
 
@@ -126,3 +128,16 @@ def test_job_uses_configured_model(
     assert record["model"] == "gpt-6-luna"
     assert record["credits"] == 2000 * 1.0 / 1000 + 1000 * 5.0 / 1000
     assert translator.temperature is None  # gpt-6-luna takes no temperature
+
+
+def test_default_quota_applies_to_new_users(client: TestClient) -> None:
+    assert client.get(URL, auth=ADMIN).json()["defaultMonthlyQuota"] == 1000
+    body = {"model": "gpt-4.1-nano", "temperature": 0, "defaultMonthlyQuota": 250}
+    assert client.put(URL, json=body, auth=ADMIN).json()["defaultMonthlyQuota"] == 250
+
+    r = client.post(
+        "/api/admin/users",
+        json={"username": "quota-default", "password": "temporary-1"},
+        auth=ADMIN,
+    )
+    assert r.json()["monthlyQuota"] == 250

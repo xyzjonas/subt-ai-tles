@@ -57,6 +57,10 @@ async function submit() {
 
       <button type="submit" :disabled="submitting">{{ submitting ? t("auth.login.submitting") : t("auth.login.submit") }}</button>
     </form>
+    <p class="signup">
+      {{ t("auth.login.noAccount") }}
+      <RouterLink to="/request-membership">{{ t("auth.login.requestAccess") }}</RouterLink>
+    </p>
   </main>
 </template>
 
@@ -70,6 +74,8 @@ async function submit() {
 .page {
   display: grid;
   place-items: center;
+  align-content: center;
+  gap: 16px;
   min-height: 100dvh;
   padding: var(--page-padding);
 }
@@ -132,6 +138,16 @@ input:focus {
 .error {
   font-size: 13px;
   color: var(--danger);
+}
+
+.signup {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.signup a {
+  font-weight: 600;
+  color: var(--primary);
 }
 
 button {

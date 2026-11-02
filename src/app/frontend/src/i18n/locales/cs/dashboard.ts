@@ -8,6 +8,7 @@ const dashboard: typeof en = {
     details: "Údaje o uživateli",
     usage: "Spotřeba",
     users: "Uživatelé",
+    requests: "Žádosti",
     settings: "Nastavení",
   },
   credits: "{amount} kredit | {amount} kredity | {amount} kreditů",
@@ -72,6 +73,8 @@ const dashboard: typeof en = {
     save: "Uložit změny",
     saving: "Ukládání…",
     saved: "Nastavení uloženo.",
+    defaultQuota: "Výchozí měsíční kvóta (kredity)",
+    defaultQuotaHint: "S čím začíná nový uživatel, ať ho přidá správce, nebo schválí jeho žádost. Stávající uživatelé si ponechají vlastní kvótu.",
   },
   models: {
     legend: "Překladový model",

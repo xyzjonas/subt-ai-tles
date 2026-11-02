@@ -8,6 +8,7 @@ export const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: "/login", name: "login", component: () => import("../views/LoginView.vue"), meta: { title: "routes.login", public: true, layout: "bare" } },
+    { path: "/request-membership", name: "membership-request", component: () => import("../views/MembershipRequestView.vue"), meta: { title: "routes.membershipRequest", public: true, layout: "bare" } },
     { path: "/change-password", name: "change-password", component: () => import("../views/ChangePasswordView.vue"), meta: { title: "routes.changePassword", layout: "bare" } },
     { path: "/", name: "translate", component: () => import("../views/TranslateView.vue"), meta: { title: "routes.translate", subtitle: "nav.translate" } },
     { path: "/requests", name: "requests", component: () => import("../views/RequestsView.vue"), meta: { title: "routes.requests", subtitle: "nav.requests" } },

@@ -8,6 +8,7 @@ from app.errors import ConflictError, ErrorCode, InvalidInputError, NotFoundErro
 from app.models import User
 from app.passwords import DUMMY_HASH, hash_password, verify_password
 from app.schemas import UserCreate, UserUpdate
+from app.services import app_settings
 
 logger = logging.getLogger(__name__)
 
@@ -51,8 +52,11 @@ def create(db: Session, data: UserCreate) -> User:
         is_admin=data.is_admin,
         locale=data.locale,
     )
-    if data.monthly_quota is not None:
-        user.monthly_quota = data.monthly_quota
+    user.monthly_quota = (
+        data.monthly_quota
+        if data.monthly_quota is not None
+        else app_settings.get(db).default_monthly_quota
+    )
     db.add(user)
     db.flush()
     return user

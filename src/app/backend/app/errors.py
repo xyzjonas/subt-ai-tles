@@ -9,6 +9,7 @@ class ErrorCode(StrEnum):
     ADMIN_ONLY = "admin_only"
 
     QUOTA_EXCEEDED = "quota_exceeded"
+    RATE_LIMITED = "rate_limited"
     MODEL_NOT_OFFERED = "model_not_offered"
     MODEL_WITHOUT_RATE = "model_without_rate"
 
@@ -28,6 +29,9 @@ class ErrorCode(StrEnum):
     FILE_INVALID_SRT = "file_invalid_srt"
     FILE_EMPTY = "file_empty"
     UNKNOWN_LANGUAGE = "unknown_language"
+
+    MEMBERSHIP_REQUEST_NOT_FOUND = "membership_request_not_found"
+    MEMBERSHIP_REQUEST_DECIDED = "membership_request_decided"
 
     USERNAME_TAKEN = "username_taken"
     LAST_ADMIN = "last_admin"
@@ -68,6 +72,17 @@ class InvalidInputError(ServiceError):
 
 class QuotaExceededError(ServiceError):
     pass
+
+
+class RateLimitedError(ServiceError):
+    """Too many requests; `retry_after` is the seconds until one would be accepted."""
+
+    def __init__(self, retry_after: int) -> None:
+        minutes = max(1, -(-retry_after // 60))
+        super().__init__(
+            ErrorCode.RATE_LIMITED, "Too many requests, try again later", minutes=minutes
+        )
+        self.retry_after = retry_after
 
 
 class UpstreamError(ServiceError):

@@ -9,6 +9,8 @@ const auth: typeof en = {
     submit: "Přihlásit se",
     submitting: "Přihlašování…",
     failed: "Přihlášení se nezdařilo. Zkuste to prosím znovu.",
+    noAccount: "Ještě nemáte účet?",
+    requestAccess: "Požádat o účet",
   },
   changePassword: {
     title: "Zvolte si nové heslo",

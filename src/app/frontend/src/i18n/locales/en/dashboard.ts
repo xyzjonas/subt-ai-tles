@@ -2,7 +2,7 @@ export default {
   title: "Dashboard",
   lead: "Your account and what your translations cost.",
   sections: "Dashboard sections",
-  tabs: { details: "User details", usage: "Usage", users: "Users", settings: "Settings" },
+  tabs: { details: "User details", usage: "Usage", users: "Users", requests: "Requests", settings: "Settings" },
   credits: "{amount} credit | {amount} credits",
   details: {
     title: "Account",
@@ -55,6 +55,8 @@ export default {
     save: "Save changes",
     saving: "Saving…",
     saved: "Settings saved.",
+    defaultQuota: "Default monthly quota (credits)",
+    defaultQuotaHint: "What a new user starts with, whether an admin adds them or approves their request. Existing users keep their own quota.",
   },
   models: {
     legend: "Translation model",

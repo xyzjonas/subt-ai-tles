@@ -1,6 +1,7 @@
 from sqlalchemy import CheckConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
+from app.config import DEFAULT_MONTHLY_QUOTA
 from app.db import Base
 
 SINGLETON_ID = 1
@@ -17,3 +18,7 @@ class AppSettings(Base):
     id: Mapped[int] = mapped_column(primary_key=True, default=SINGLETON_ID)
     model: Mapped[str]
     temperature: Mapped[float]
+    # Monthly credits a new user starts with.
+    default_monthly_quota: Mapped[int] = mapped_column(
+        default=DEFAULT_MONTHLY_QUOTA, server_default=str(DEFAULT_MONTHLY_QUOTA)
+    )

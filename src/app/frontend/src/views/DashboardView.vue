@@ -3,12 +3,13 @@ import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import SegmentedTabs from "../components/ui/SegmentedTabs.vue";
 import SettingsTab from "../components/dashboard/SettingsTab.vue";
+import MembershipRequestsTab from "../components/membership/MembershipRequestsTab.vue";
 import UsersTab from "../components/users/UsersTab.vue";
 import UsageTab from "../components/dashboard/UsageTab.vue";
 import UserDetails from "../components/dashboard/UserDetails.vue";
 import { useCurrentUser } from "../composables/useCurrentUser";
 
-type DashboardTab = "details" | "usage" | "users" | "settings";
+type DashboardTab = "details" | "usage" | "users" | "requests" | "settings";
 
 const { t } = useI18n();
 const tab = ref<DashboardTab>("details");
@@ -22,6 +23,7 @@ const tabs = computed<{ value: DashboardTab; label: string }[]>(() => [
   ...(user.value?.isAdmin
     ? [
         { value: "users" as const, label: t("dashboard.tabs.users") },
+        { value: "requests" as const, label: t("dashboard.tabs.requests") },
         { value: "settings" as const, label: t("dashboard.tabs.settings") },
       ]
     : []),
@@ -43,6 +45,7 @@ const tabs = computed<{ value: DashboardTab; label: string }[]>(() => [
     </template>
     <UsageTab v-else-if="tab === 'usage'" />
     <UsersTab v-else-if="tab === 'users' && user?.isAdmin" />
+    <MembershipRequestsTab v-else-if="tab === 'requests' && user?.isAdmin" />
     <SettingsTab v-else-if="user?.isAdmin" />
   </section>
 </template>

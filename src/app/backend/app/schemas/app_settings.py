@@ -16,9 +16,11 @@ class ModelOption(CamelModel):
 class AppSettingsIn(CamelModel):
     model: TranslationModel
     temperature: float = Field(ge=0, le=1)
+    default_monthly_quota: int = Field(ge=0)
 
 
 class AppSettingsOut(CamelModel):
     model: TranslationModel
     temperature: float
+    default_monthly_quota: int
     models: list[ModelOption]

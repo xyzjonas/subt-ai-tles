@@ -3,6 +3,11 @@ from app.schemas.cue import CueOut, CueUpdate, CueVariant, RetranslateRequest
 from app.schemas.folder import FolderIn, FolderOut
 from app.schemas.job import EstimateRequest, JobEstimate, JobOut, JobUpdate
 from app.schemas.language import LanguageOut
+from app.schemas.membership_request import (
+    MembershipRequestApprove,
+    MembershipRequestCreate,
+    MembershipRequestOut,
+)
 from app.schemas.usage import (
     ModelRateIn,
     ModelRateOut,
@@ -26,6 +31,9 @@ __all__ = [
     "JobOut",
     "JobUpdate",
     "LanguageOut",
+    "MembershipRequestApprove",
+    "MembershipRequestCreate",
+    "MembershipRequestOut",
     "ModelOption",
     "ModelRateIn",
     "ModelRateOut",
