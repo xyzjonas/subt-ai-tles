@@ -29,6 +29,9 @@ class ErrorCode(StrEnum):
     FILE_EMPTY = "file_empty"
     UNKNOWN_LANGUAGE = "unknown_language"
 
+    MEMBERSHIP_REQUEST_NOT_FOUND = "membership_request_not_found"
+    MEMBERSHIP_REQUEST_DECIDED = "membership_request_decided"
+
     USERNAME_TAKEN = "username_taken"
     LAST_ADMIN = "last_admin"
     CANNOT_DELETE_SELF = "cannot_delete_self"

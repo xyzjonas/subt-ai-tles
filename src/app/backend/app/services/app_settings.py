@@ -38,6 +38,7 @@ def update(db: Session, data: AppSettingsIn) -> AppSettings:
     settings = get(db)
     settings.model = data.model
     settings.temperature = data.temperature
+    settings.default_monthly_quota = data.default_monthly_quota
     db.flush()
     return settings
 
@@ -61,5 +62,6 @@ def view(db: Session) -> AppSettingsOut:
     return AppSettingsOut(
         model=TranslationModel(settings.model),
         temperature=settings.temperature,
+        default_monthly_quota=settings.default_monthly_quota,
         models=options,
     )

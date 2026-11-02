@@ -9,6 +9,7 @@ from app.api import (
     folders,
     jobs,
     languages,
+    membership_requests,
     usage,
 )
 
@@ -23,5 +24,6 @@ for _module in (
     admin_users,
     admin_rates,
     admin_settings,
+    membership_requests,
 ):
     api_router.include_router(_module.router)
