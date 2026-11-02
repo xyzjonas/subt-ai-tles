@@ -137,6 +137,19 @@ def update(
     return job
 
 
+def retry_enqueue(db: Session, user: User, job_id: str) -> Job:
+    """Re-queue a job that never reached the worker, without creating a new request."""
+    job = get(db, user, job_id)
+    if job.status != JobStatus.FAILED or job.error != ErrorCode.TRANSLATION_QUEUE_FAILED:
+        msg = "Job was not queued unsuccessfully"
+        raise ConflictError(ErrorCode.JOB_NOT_RETRYABLE, msg)
+    job.status = JobStatus.PROCESSING
+    job.error = None
+    db.commit()
+    enqueue(db, job)
+    return job
+
+
 def delete(db: Session, user: User, job_id: str) -> None:
     """Also cancels a running translation: the worker stops once its job row is gone."""
     db.delete(get(db, user, job_id))

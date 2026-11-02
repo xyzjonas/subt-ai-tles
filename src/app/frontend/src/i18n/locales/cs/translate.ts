@@ -3,12 +3,13 @@ import type en from "../en/translate";
 const translate: typeof en = {
   hero: {
     title: "Překládejte titulky pomocí AI",
-    lead: "Nahrajte libovolný soubor .srt, vyberte jazyky a nechte jazykové modely vytvořit kontextové a synchronizované překlady.",
+    lead: "Nahrajte jeden či více souborů .srt, vyberte jazyky a nechte jazykové modely vytvořit kontextové a synchronizované překlady.",
   },
   file: {
-    label: "Zdrojový soubor s titulky",
+    label: "Zdrojové soubory s titulky",
     reading: "Načítání souboru…",
-    prompt: "Klepněte pro výběr nebo přetáhněte soubor .srt",
+    prompt: "Klepněte pro výběr nebo přetáhněte soubory .srt",
+    promptMore: "Přidat další soubory .srt",
     hint: "Soubory .srt v kódování UTF-8 do {max} MB",
     browse: "Vybrat ze zařízení",
     remove: "Odebrat soubor",

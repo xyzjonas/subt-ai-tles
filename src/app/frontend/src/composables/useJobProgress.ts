@@ -1,6 +1,6 @@
 import { computed, onScopeDispose, ref, watch, type Ref } from "vue";
 import { getCue } from "../api/cues";
-import { cancelJob, getJob } from "../api/jobs";
+import { cancelJob, getJob, retryJob } from "../api/jobs";
 import type { Cue, Job, JobStage } from "../api/types";
 import { t } from "../i18n";
 import { describeCode } from "../i18n/apiErrors";
@@ -73,6 +73,19 @@ export function useJobProgress(jobId: Ref<string>, onComplete: () => void) {
     timer = setTimeout(poll, POLL_MS);
   }
 
+  /** Failed-to-queue jobs are rescheduled in place; anything else just reloads. */
+  async function retry() {
+    clearTimeout(timer);
+    if (job.value?.status === "failed" && job.value.error === "translation_queue_failed") {
+      try {
+        await retryJob(jobId.value);
+      } catch {
+        // the poll below reports whatever state the job is actually in
+      }
+    }
+    poll();
+  }
+
   async function cancel() {
     cancelling.value = true;
     clearTimeout(timer);
@@ -87,5 +100,5 @@ export function useJobProgress(jobId: Ref<string>, onComplete: () => void) {
   watch(jobId, () => { clearTimeout(timer); job.value = cue.value = undefined; poll(); }, { immediate: true });
   onScopeDispose(() => clearTimeout(timer));
 
-  return { job, cue, error, cancelling, processed, total, percent, chunkPercent, milestones, retry: poll, cancel };
+  return { job, cue, error, cancelling, processed, total, percent, chunkPercent, milestones, retry, cancel };
 }

@@ -19,6 +19,7 @@ class ErrorCode(StrEnum):
     JOB_STILL_PROCESSING = "job_still_processing"
     FOLDER_NOT_FOUND = "folder_not_found"
     FOLDER_NAME_TAKEN = "folder_name_taken"
+    JOB_NOT_RETRYABLE = "job_not_retryable"
     TRANSLATION_NOT_READY = "translation_not_ready"
 
     FILE_NOT_SRT = "file_not_srt"

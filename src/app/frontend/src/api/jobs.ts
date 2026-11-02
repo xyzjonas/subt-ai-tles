@@ -39,6 +39,11 @@ export async function downloadJob(job: Job): Promise<Blob> {
   return (await request(`/jobs/${job.id}/download`)).blob();
 }
 
+/** POST /api/jobs/:id/retry — re-queues a job that failed to reach the worker */
+export function retryJob(id: string): Promise<Job> {
+  return requestJson(`/jobs/${id}/retry`, { method: "POST" });
+}
+
 /** DELETE /api/jobs/:id/translation — stops a processing job */
 export async function cancelJob(id: string): Promise<void> {
   await request(`/jobs/${id}/translation`, { method: "DELETE" });

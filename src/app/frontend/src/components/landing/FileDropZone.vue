@@ -2,11 +2,12 @@
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { MAX_SRT_MB } from "../../utils/srt";
+import type { SrtEntry } from "../../composables/useSrtFiles";
 import AppIcon from "../ui/AppIcon.vue";
 import SelectedFileCard from "./SelectedFileCard.vue";
 
-defineProps<{ file: File | null; cueCount: number; error: string; loading: boolean }>();
-const emit = defineEmits<{ select: [file: File]; remove: [] }>();
+defineProps<{ entries: SrtEntry[]; errors: string[]; loading: boolean }>();
+const emit = defineEmits<{ select: [files: File[]]; remove: [file: File] }>();
 
 const { t } = useI18n();
 const input = ref<HTMLInputElement | null>(null);
@@ -14,13 +15,13 @@ const dragging = ref(false);
 
 function onPick(event: Event) {
   const target = event.target as HTMLInputElement;
-  if (target.files?.[0]) emit("select", target.files[0]);
+  if (target.files?.length) emit("select", Array.from(target.files));
   target.value = "";
 }
 
 function onDrop(event: DragEvent) {
   dragging.value = false;
-  if (event.dataTransfer?.files[0]) emit("select", event.dataTransfer.files[0]);
+  if (event.dataTransfer?.files.length) emit("select", Array.from(event.dataTransfer.files));
 }
 </script>
 
@@ -28,24 +29,29 @@ function onDrop(event: DragEvent) {
   <section class="zone" aria-labelledby="source-label">
     <h2 id="source-label" class="section-label">{{ t("translate.file.label") }}</h2>
 
-    <SelectedFileCard v-if="file" :file="file" :cue-count="cueCount" @remove="$emit('remove')" />
+    <ul v-if="entries.length" class="files">
+      <li v-for="entry in entries" :key="`${entry.file.name}-${entry.file.size}-${entry.file.lastModified}`">
+        <SelectedFileCard :file="entry.file" :cue-count="entry.cueCount" @remove="$emit('remove', entry.file)" />
+      </li>
+    </ul>
 
     <div
-      v-else
       class="drop"
-      :class="{ dragging }"
+      :class="{ dragging, compact: entries.length > 0 }"
       @dragover.prevent="dragging = true"
       @dragleave="dragging = false"
       @drop.prevent="onDrop"
     >
       <span class="icon"><AppIcon name="upload" :size="24" /></span>
-      <p class="cta">{{ loading ? t("translate.file.reading") : t("translate.file.prompt") }}</p>
+      <p class="cta">{{ loading ? t("translate.file.reading") : entries.length ? t("translate.file.promptMore") : t("translate.file.prompt") }}</p>
       <p class="hint">{{ t("translate.file.hint", { max: MAX_SRT_MB }) }}</p>
       <button type="button" class="browse" @click="input?.click()">{{ t("translate.file.browse") }}</button>
-      <input ref="input" type="file" accept=".srt,text/plain,application/x-subrip" hidden @change="onPick" />
+      <input ref="input" type="file" accept=".srt,text/plain,application/x-subrip" multiple hidden @change="onPick" />
     </div>
 
-    <p v-if="error" class="error" role="alert">{{ error }}</p>
+    <ul v-if="errors.length" class="errors" role="alert">
+      <li v-for="message in errors" :key="message">{{ message }}</li>
+    </ul>
   </section>
 </template>
 
@@ -53,6 +59,22 @@ function onDrop(event: DragEvent) {
 .zone {
   display: grid;
   gap: 10px;
+}
+
+.files {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+}
+
+.drop.compact {
+  padding: 16px 20px;
+}
+
+.drop.compact .icon,
+.drop.compact .hint {
+  display: none;
 }
 
 .drop {
@@ -108,10 +130,14 @@ function onDrop(event: DragEvent) {
   background: #ddd6fe;
 }
 
-.error {
+.errors {
+  display: grid;
+  gap: 4px;
+  list-style: none;
   padding: 10px 14px;
   border-radius: var(--radius-md);
   background: var(--danger-bg);
+  overflow-wrap: anywhere;
   color: #b91c1c;
   font-size: 13px;
 }

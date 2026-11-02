@@ -22,6 +22,7 @@ const errors: typeof en = {
     job_not_found: "Tento překlad už neexistuje.",
     cue_not_found: "Tento titulek už neexistuje.",
     user_not_found: "Tento uživatel už neexistuje.",
+    job_not_retryable: "Tento překlad nelze zopakovat.",
     job_not_processing: "Tento překlad už neběží.",
     translation_not_ready: "Překlad ještě není dokončen.",
     job_still_processing: "Probíhající překlad nelze archivovat. Zrušte ho nebo počkejte na dokončení.",
