@@ -16,6 +16,7 @@ class ErrorCode(StrEnum):
     CUE_NOT_FOUND = "cue_not_found"
     USER_NOT_FOUND = "user_not_found"
     JOB_NOT_PROCESSING = "job_not_processing"
+    JOB_NOT_RETRYABLE = "job_not_retryable"
     TRANSLATION_NOT_READY = "translation_not_ready"
 
     FILE_NOT_SRT = "file_not_srt"

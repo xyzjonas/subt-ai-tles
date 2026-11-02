@@ -168,6 +168,28 @@ def test_enqueue_failure_fails_job(
     assert job["error"] == "translation_queue_failed"
 
 
+def test_retry_requeues_job_that_failed_to_queue(
+    client: TestClient, make_user: Callable, queue: FakeQueue
+) -> None:
+    queue.fail = True
+    kira = make_user("kira")
+    job = _upload(client, kira)
+    assert job["error"] == "translation_queue_failed"
+    queue.fail = False
+    r = client.post(f"/api/jobs/{job['id']}/retry", auth=kira)
+    assert r.status_code == 200
+    assert r.json()["status"] == "processing"
+    assert _finish(client, queue, kira, job["id"])["status"] == "ready"
+
+
+def test_retry_rejects_job_that_was_queued(
+    client: TestClient, make_user: Callable, queue: FakeQueue
+) -> None:
+    lena = make_user("lena")
+    job = _upload(client, lena)
+    assert client.post(f"/api/jobs/{job['id']}/retry", auth=lena).status_code == 409
+
+
 def test_retranslate_failure_is_bad_gateway(
     client: TestClient, make_user: Callable, queue: FakeQueue, translator: StubTranslator
 ) -> None:

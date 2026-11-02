@@ -1,12 +1,13 @@
 export default {
   hero: {
     title: "Translate subtitles with AI",
-    lead: "Upload any .srt file, pick your languages, and let LLMs deliver contextual, synchronized translations.",
+    lead: "Upload one or more .srt files, pick your languages, and let LLMs deliver contextual, synchronized translations.",
   },
   file: {
-    label: "Source subtitle file",
+    label: "Source subtitle files",
     reading: "Reading file…",
-    prompt: "Tap to browse or drop .srt file",
+    prompt: "Tap to browse or drop .srt files",
+    promptMore: "Add more .srt files",
     hint: "Accepts .srt, UTF-8 encoded up to {max} MB",
     browse: "Select from device",
     remove: "Remove file",

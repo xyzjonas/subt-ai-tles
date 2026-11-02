@@ -21,6 +21,7 @@ export default {
     job_not_found: "This translation no longer exists.",
     cue_not_found: "This subtitle line no longer exists.",
     user_not_found: "This user no longer exists.",
+    job_not_retryable: "This translation can't be retried.",
     job_not_processing: "This translation is no longer running.",
     translation_not_ready: "The translation isn't finished yet.",
     file_not_srt: "Only .srt files are supported.",
