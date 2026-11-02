@@ -3,7 +3,7 @@
 ## 1. Screen Metadata
 - **Route / Title**: `Translate .SRT - subt-ai-tles`
 - **Shell Layout**: `mobile_tab` (Top App Bar + Persistent Bottom Dock with active tab on "Translate")
-- **Purpose**: Allow users to drag-and-drop or select an SRT subtitle file, pick target translation language, configure context/tone parameters, and kick off the AI translation job.
+- **Purpose**: Allow users to drag-and-drop or select one or more SRT subtitle files (one translation job is created per file), pick target translation language, configure context/tone parameters, and kick off the AI translation job.
 
 ---
 

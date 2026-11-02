@@ -14,12 +14,11 @@ const { srt } = form;
   <div class="page">
     <HeroSection />
     <FileDropZone
-      :file="srt.file.value"
-      :cue-count="srt.cueCount.value"
-      :error="srt.error.value"
+      :entries="srt.entries.value"
+      :errors="srt.errors.value"
       :loading="srt.loading.value"
-      @select="srt.select"
-      @remove="srt.clear"
+      @select="srt.add"
+      @remove="srt.remove"
     />
     <LanguagePairing
       :target-code="form.targetCode.value"
