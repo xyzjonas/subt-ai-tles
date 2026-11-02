@@ -1,9 +1,19 @@
 import { request, requestJson } from "./http";
-import type { CreateJobPayload, Job, JobEstimate } from "./types";
+import type { CreateJobPayload, Job, JobEstimate, JobPatch } from "./types";
 
 /** GET /api/jobs?limit=n */
 export function listJobs(limit?: number): Promise<Job[]> {
   return requestJson(limit ? `/jobs?limit=${limit}` : "/jobs");
+}
+
+/** GET /api/jobs?archived=true — the archive, hidden from the default listing */
+export function listArchivedJobs(): Promise<Job[]> {
+  return requestJson("/jobs?archived=true");
+}
+
+/** PATCH /api/jobs/:id — move to a folder, archive or restore -> the updated job */
+export function updateJob(id: string, patch: JobPatch): Promise<Job> {
+  return requestJson(`/jobs/${id}`, { method: "PATCH", body: patch });
 }
 
 /** GET /api/jobs/:id (polled while processing) */

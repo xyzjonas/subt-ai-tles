@@ -7,6 +7,7 @@ from app.models.catalog import (
     TranslationModel,
 )
 from app.models.cue import Cue
+from app.models.folder import Folder
 from app.models.job import Job, JobStage, JobStatus
 from app.models.language import Language
 from app.models.story_summary import StorySummary
@@ -19,6 +20,7 @@ __all__ = [
     "MODEL_INFO",
     "AppSettings",
     "Cue",
+    "Folder",
     "Job",
     "JobStage",
     "JobStatus",

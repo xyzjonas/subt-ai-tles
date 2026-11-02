@@ -31,7 +31,7 @@ from app.db import SessionLocal
 from app.errors import ErrorCode, ServiceError, UpstreamError
 from app.models import AppSettings, Cue, Job, JobStage, JobStatus, UsageKind, User
 from app.schemas import CueVariant, JobEstimate
-from app.services import app_settings, usage
+from app.services import app_settings, folders, usage
 from app.services.summaries import SummaryStore
 
 logger = logging.getLogger(__name__)
@@ -150,6 +150,9 @@ class _Pipeline:
 
     stage: JobStage = JobStage.RECOGNIZING
     summary_status: SummaryStatus | None = None
+    # series title when the file was recognized as a TV episode
+    show: str | None = None
+    show_filed: bool = False
     # translator usage when translating began: everything before it was the story brief
     translate_baseline: Usage | None = None
 
@@ -158,14 +161,24 @@ class _Pipeline:
         return (UsageKind.SUMMARIZE, brief), (UsageKind.TRANSLATE, spent - brief)
 
 
+def _file_under_show(db: Session, job: Job, pipeline: _Pipeline) -> None:
+    """Group an episode with the other requests of its show, once, unless it is already filed."""
+    if pipeline.show is None or pipeline.show_filed:
+        return
+    pipeline.show_filed = True
+    if job.folder_id is None:
+        job.folder_id = folders.for_show(db, job.owner_id, pipeline.show).id
+
+
 def _report(db: Session, job_id: str, progress: ProgressData, pipeline: _Pipeline) -> bool:
     """Persist progress. False means the job row is gone, i.e. it was cancelled."""
     job = _load(db, job_id)
     if job is None:
         return False
+    _file_under_show(db, job, pipeline)
     done = min(progress.current, job.cue_count)
     summary_status = pipeline.summary_status.value if pipeline.summary_status else None
-    if (done, pipeline.stage, summary_status) != (
+    if db.dirty or (done, pipeline.stage, summary_status) != (
         job.processed_cues,
         job.stage,
         job.summary_status,
@@ -204,6 +217,8 @@ async def _translate(
 
     if request.metadata and request.metadata.key:
         pipeline.stage = JobStage.SUMMARIZING
+        if request.metadata.key.startswith("tv:"):
+            pipeline.show = request.metadata.title
     request, pipeline.summary_status = await add_summary(
         request, translator, SummaryStore(translator.model)
     )
@@ -252,6 +267,7 @@ async def run_job(job_id: str) -> None:
                 return
             for cue, item in zip(cues, translated, strict=True):
                 cue.target = item.text
+            _file_under_show(db, job, pipeline)
             job.source_lang = source.value if source else None
             job.processed_cues = job.cue_count
             job.status = JobStatus.READY

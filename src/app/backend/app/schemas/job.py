@@ -13,6 +13,8 @@ class JobOut(CamelModel):
     target_lang: str
     cue_count: int
     created_at: datetime
+    folder_id: str | None = None
+    archived_at: datetime | None = None
     status: JobStatus
     processed_cues: int | None = None
     stage: JobStage | None = None
@@ -29,3 +31,10 @@ class EstimateRequest(CamelModel):
 class JobEstimate(CamelModel):
     seconds: int
     tokens: int
+
+
+class JobUpdate(CamelModel):
+    """Only the fields present are changed; `folderId: null` takes the job out of its folder."""
+
+    folder_id: str | None = None
+    archived: bool | None = None

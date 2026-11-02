@@ -5,7 +5,7 @@ from fastapi.concurrency import run_in_threadpool
 
 from app.config import settings
 from app.db import DbDep
-from app.schemas import JobEstimate, JobOut
+from app.schemas import JobEstimate, JobOut, JobUpdate
 from app.schemas.job import EstimateRequest
 from app.security import CurrentUser
 from app.services import jobs, translation
@@ -14,8 +14,13 @@ router = APIRouter(prefix="/jobs", tags=["jobs"])
 
 
 @router.get("", response_model_exclude_none=True)
-def list_jobs(db: DbDep, user: CurrentUser, limit: int | None = None) -> list[JobOut]:
-    return [JobOut.model_validate(job) for job in jobs.list_for_user(db, user, limit)]
+def list_jobs(
+    db: DbDep, user: CurrentUser, limit: int | None = None, archived: bool = False
+) -> list[JobOut]:
+    return [
+        JobOut.model_validate(job)
+        for job in jobs.list_for_user(db, user, limit, archived=archived)
+    ]
 
 
 @router.post("", status_code=status.HTTP_201_CREATED, response_model_exclude_none=True)
@@ -45,6 +50,19 @@ def estimate_job(body: EstimateRequest, _user: CurrentUser) -> JobEstimate:
 @router.get("/{job_id}", response_model_exclude_none=True)
 def get_job(job_id: str, db: DbDep, user: CurrentUser) -> JobOut:
     return JobOut.model_validate(jobs.get(db, user, job_id))
+
+
+@router.patch("/{job_id}", response_model_exclude_none=True)
+def update_job(job_id: str, body: JobUpdate, db: DbDep, user: CurrentUser) -> JobOut:
+    changes = body.model_fields_set
+    job = jobs.update(
+        db,
+        user,
+        job_id,
+        folder_id=body.folder_id if "folder_id" in changes else ...,
+        archived=body.archived,
+    )
+    return JobOut.model_validate(job)
 
 
 @router.post("/{job_id}/retry", response_model_exclude_none=True)

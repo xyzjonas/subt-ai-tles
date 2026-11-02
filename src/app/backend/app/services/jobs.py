@@ -1,7 +1,8 @@
 import logging
 import re
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import PurePath
+from types import EllipsisType
 
 import srt  # type: ignore[import-untyped]
 from sqlalchemy import select
@@ -10,14 +11,21 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.errors import ConflictError, ErrorCode, InvalidInputError, NotFoundError
 from app.models import Cue, Job, JobStatus, User
-from app.services import app_settings, languages, usage
+from app.services import app_settings, folders, languages, usage
 from app.worker import translate_job
 
 logger = logging.getLogger(__name__)
 
 
-def list_for_user(db: Session, user: User, limit: int | None = None) -> list[Job]:
-    query = select(Job).where(Job.owner_id == user.id).order_by(Job.created_at.desc())
+def list_for_user(
+    db: Session, user: User, limit: int | None = None, *, archived: bool = False
+) -> list[Job]:
+    """Either the active requests (default) or the archived ones."""
+    query = (
+        select(Job)
+        .where(Job.owner_id == user.id, Job.archived_at.is_not(None) == archived)
+        .order_by(Job.created_at.desc())
+    )
     if limit is not None:
         query = query.limit(limit)
     return list(db.scalars(query))
@@ -106,6 +114,27 @@ def enqueue(db: Session, job: Job) -> None:
         job.status = JobStatus.FAILED
         job.error = ErrorCode.TRANSLATION_QUEUE_FAILED
         db.commit()
+
+
+def update(
+    db: Session,
+    user: User,
+    job_id: str,
+    *,
+    folder_id: str | None | EllipsisType = ...,
+    archived: bool | None = None,
+) -> Job:
+    """Move into (or, with None, out of) a folder and/or archive or restore; `...` = keep."""
+    job = get(db, user, job_id)
+    if folder_id is not ...:
+        job.folder_id = None if folder_id is None else folders.get(db, user, folder_id).id
+    if archived is not None and archived != (job.archived_at is not None):
+        if archived and job.status == JobStatus.PROCESSING:
+            msg = "A running translation can't be archived"
+            raise ConflictError(ErrorCode.JOB_STILL_PROCESSING, msg)
+        job.archived_at = datetime.now(UTC) if archived else None
+    db.flush()
+    return job
 
 
 def retry_enqueue(db: Session, user: User, job_id: str) -> Job:

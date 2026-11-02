@@ -11,6 +11,7 @@ const { t } = useI18n();
 const tabs = computed(() => [
   { value: "processing" as const, label: t("requests.tabs.processing", { count: props.counts.processing }) },
   { value: "completed" as const, label: t("requests.tabs.completed", { count: props.counts.completed }) },
+  { value: "archived" as const, label: t("requests.tabs.archived", { count: props.counts.archived }) },
 ]);
 </script>
 

@@ -2,14 +2,22 @@
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { downloadJob } from "../../api/jobs";
-import type { Job } from "../../api/types";
+import type { Folder, Job } from "../../api/types";
+import { startJobDrag } from "../../composables/useJobDrag";
 import { displayLanguage, languageCode } from "../../utils/language";
 import { stageLabel } from "../../utils/stage";
 import { downloadBlob, formatWhen, timeAgo, translatedFileName } from "../../utils/srt";
 import AppIcon from "../ui/AppIcon.vue";
 import StatusBadge from "../ui/StatusBadge.vue";
+import RequestActions from "./RequestActions.vue";
 
-const props = defineProps<{ job: Job }>();
+const props = defineProps<{ job: Job; folders: Folder[]; folderName?: string }>();
+const emit = defineEmits<{
+  move: [folderId: string | null];
+  createFolder: [name: string];
+  archive: [];
+  restore: [];
+}>();
 
 const { t, locale } = useI18n();
 
@@ -29,7 +37,7 @@ async function download() {
 </script>
 
 <template>
-  <article class="card" :class="{ processing }">
+  <article class="card" :class="{ processing, archived: !!job.archivedAt }" :draggable="!job.archivedAt" @dragstart="startJobDrag($event, job.id)">
     <RouterLink :to="{ name: job.status === 'ready' ? 'editor' : 'job', params: { id: job.id } }" class="link" :aria-label="t('requests.card.open', { name: job.fileName })" />
     <header class="head">
       <span class="icon"><AppIcon name="file" :size="18" /></span>
@@ -59,6 +67,16 @@ async function download() {
       </button>
     </template>
 
+    <RequestActions
+      :job="job"
+      :folders="folders"
+      :folder-name="folderName"
+      @move="emit('move', $event)"
+      @create-folder="emit('createFolder', $event)"
+      @archive="emit('archive')"
+      @restore="emit('restore')"
+    />
+
     <AppIcon class="chevron" name="next" :size="18" />
   </article>
 </template>
@@ -77,6 +95,10 @@ async function download() {
 
 .card.processing {
   border-left: 4px solid var(--warning-strong);
+}
+
+.card.archived {
+  background: var(--surface-subdued);
 }
 
 .card:hover {
