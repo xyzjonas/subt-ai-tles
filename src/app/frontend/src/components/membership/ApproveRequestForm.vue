@@ -26,7 +26,7 @@ async function submit() {
 </script>
 
 <template>
-  <section v-if="created" class="approve" aria-live="polite">
+  <section v-if="created" class="approve-form" aria-live="polite">
     <h3>{{ t("membership.admin.approved") }}</h3>
     <p class="ok">
       <i18n-t keypath="membership.admin.share" scope="global">
@@ -48,7 +48,7 @@ async function submit() {
     <button type="button" class="primary" @click="emit('done')">{{ t("membership.admin.done") }}</button>
   </section>
 
-  <form v-else class="approve" @submit.prevent="submit">
+  <form v-else class="approve-form" @submit.prevent="submit">
     <h3>{{ t("membership.admin.approveTitle", { email }) }}</h3>
     <TemporaryPasswordField v-model="password" :label="t('membership.admin.temporary')" />
     <p v-if="error" class="fail" role="alert">{{ error }}</p>
@@ -60,7 +60,7 @@ async function submit() {
 </template>
 
 <style scoped>
-.approve {
+.approve-form {
   display: grid;
   gap: 12px;
   padding-top: 12px;

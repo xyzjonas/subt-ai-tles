@@ -34,8 +34,8 @@ async function rejectRequest() {
     <template v-if="request.status === 'pending'">
       <ApproveRequestForm v-if="approving" :email="request.email" :approve="(password) => approve(request.id, password)" @cancel="approving = false" @done="emit('decided', request.id)" />
       <div v-else class="actions">
-        <button type="button" class="reject" :disabled="rejecting" @click="rejectRequest">{{ rejecting ? t("membership.admin.rejecting") : t("membership.admin.reject") }}</button>
-        <button type="button" class="approve" @click="approving = true">{{ t("membership.admin.approve") }}</button>
+        <button type="button" class="action-reject" :disabled="rejecting" @click="rejectRequest">{{ rejecting ? t("membership.admin.rejecting") : t("membership.admin.reject") }}</button>
+        <button type="button" class="action-approve" @click="approving = true">{{ t("membership.admin.approve") }}</button>
       </div>
       <p v-if="error" class="fail" role="alert">{{ error }}</p>
     </template>
@@ -100,7 +100,7 @@ button:disabled {
   cursor: not-allowed;
 }
 
-.approve {
+.action-approve {
   flex: 1;
   border: 0;
   background: var(--primary);
@@ -108,11 +108,11 @@ button:disabled {
   color: #fff;
 }
 
-.approve:hover {
+.action-approve:hover {
   background: var(--primary-hover);
 }
 
-.reject {
+.action-reject {
   border: 1px solid #fecaca;
   background: #fee2e2;
   color: #dc2626;
