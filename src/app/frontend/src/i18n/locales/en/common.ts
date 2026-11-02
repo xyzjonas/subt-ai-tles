@@ -10,6 +10,7 @@ export default {
   },
   routes: {
     login: "Sign in",
+    membershipRequest: "Request an account",
     changePassword: "Change password",
     translate: "Translate .srt",
     requests: "My requests",

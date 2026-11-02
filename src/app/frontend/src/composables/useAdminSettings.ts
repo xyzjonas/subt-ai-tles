@@ -6,7 +6,7 @@ import { describeError } from "../i18n/apiErrors";
 
 export function useAdminSettings() {
   const saved = ref<AppSettings | null>(null);
-  const draft = reactive({ model: "", temperature: 0 });
+  const draft = reactive({ model: "", temperature: 0, defaultMonthlyQuota: 0 });
   const loading = ref(true);
   const saving = ref(false);
   const justSaved = ref(false);
@@ -16,6 +16,7 @@ export function useAdminSettings() {
     saved.value = settings;
     draft.model = settings.model;
     draft.temperature = settings.temperature;
+    draft.defaultMonthlyQuota = settings.defaultMonthlyQuota;
   }
 
   onMounted(async () => {
@@ -29,14 +30,14 @@ export function useAdminSettings() {
   });
 
   const selected = computed(() => saved.value?.models.find((m) => m.id === draft.model));
-  const dirty = computed(() => !!saved.value && (draft.model !== saved.value.model || draft.temperature !== saved.value.temperature));
+  const dirty = computed(() => !!saved.value && (draft.model !== saved.value.model || draft.temperature !== saved.value.temperature || draft.defaultMonthlyQuota !== saved.value.defaultMonthlyQuota));
 
   async function save() {
     saving.value = true;
     error.value = "";
     justSaved.value = false;
     try {
-      adopt(await updateSettings({ model: draft.model, temperature: draft.temperature }));
+      adopt(await updateSettings({ ...draft }));
       justSaved.value = true;
     } catch (e) {
       error.value = describeError(e, "dashboard.settings.saveFailed");

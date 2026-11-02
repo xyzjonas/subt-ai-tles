@@ -33,6 +33,8 @@ export default {
     file_invalid_srt: "This doesn't look like a valid .srt file.",
     file_empty: "The file contains no subtitles.",
     unknown_language: "Unknown language: {language}.",
+    membership_request_not_found: "That membership request no longer exists.",
+    membership_request_decided: "That request has already been approved or rejected.",
     username_taken: "That username is already taken.",
     last_admin: "There must always be at least one active administrator.",
     cannot_delete_self: "You can't delete your own account.",

@@ -6,7 +6,7 @@ export function getSettings(): Promise<AppSettings> {
   return requestJson("/admin/settings");
 }
 
-/** PUT /api/admin/settings  { model, temperature } -> the saved settings (admin only) */
+/** PUT /api/admin/settings  { model, temperature, defaultMonthlyQuota } -> the saved settings (admin only) */
 export function updateSettings(update: AppSettingsUpdate): Promise<AppSettings> {
   return requestJson("/admin/settings", { method: "PUT", body: update });
 }

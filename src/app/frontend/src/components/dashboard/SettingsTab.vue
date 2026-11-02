@@ -22,6 +22,12 @@ const { saved, draft, selected, dirty, loading, saving, justSaved, error, save, 
         :model-label="selected?.label ?? t('dashboard.models.thisModel')"
       />
 
+      <label class="quota">
+        {{ t("dashboard.settings.defaultQuota") }}
+        <input v-model.number="draft.defaultMonthlyQuota" type="number" min="0" step="1" required />
+        <small>{{ t("dashboard.settings.defaultQuotaHint") }}</small>
+      </label>
+
       <footer class="bar">
         <p class="note">{{ t("dashboard.settings.note") }}</p>
         <div class="actions">
@@ -46,6 +52,34 @@ form {
 .intro {
   font-size: 13px;
   color: var(--text-secondary);
+}
+
+.quota {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.quota input {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  font: inherit;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.quota input:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 0;
+}
+
+.quota small {
+  font-weight: 400;
+  color: var(--text-muted);
 }
 
 .status {

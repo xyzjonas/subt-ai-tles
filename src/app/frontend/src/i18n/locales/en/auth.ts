@@ -7,6 +7,8 @@ export default {
     submit: "Sign in",
     submitting: "Signing in…",
     failed: "Could not sign in. Please try again.",
+    noAccount: "No account yet?",
+    requestAccess: "Request an account",
   },
   changePassword: {
     title: "Choose a new password",

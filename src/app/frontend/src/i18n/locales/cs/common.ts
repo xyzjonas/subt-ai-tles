@@ -12,6 +12,7 @@ const common: typeof en = {
   },
   routes: {
     login: "Přihlášení",
+    membershipRequest: "Žádost o účet",
     changePassword: "Změna hesla",
     translate: "Přeložit .srt",
     requests: "Moje překlady",
