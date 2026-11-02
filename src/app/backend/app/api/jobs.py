@@ -47,6 +47,11 @@ def get_job(job_id: str, db: DbDep, user: CurrentUser) -> JobOut:
     return JobOut.model_validate(jobs.get(db, user, job_id))
 
 
+@router.post("/{job_id}/retry", response_model_exclude_none=True)
+def retry_job(job_id: str, db: DbDep, user: CurrentUser) -> JobOut:
+    return JobOut.model_validate(jobs.retry_enqueue(db, user, job_id))
+
+
 @router.delete("/{job_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_job(job_id: str, db: DbDep, user: CurrentUser) -> None:
     jobs.delete(db, user, job_id)
