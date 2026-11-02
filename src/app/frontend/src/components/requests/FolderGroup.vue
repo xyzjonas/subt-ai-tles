@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { nextTick, ref } from "vue";
 import type { Folder } from "../../api/types";
+import { useFolderCollapse } from "../../composables/useFolderCollapse";
 import { useJobDropTarget } from "../../composables/useJobDrag";
 import AppIcon from "../ui/AppIcon.vue";
 
@@ -8,6 +9,8 @@ const props = defineProps<{ folder: Folder; count: number }>();
 const emit = defineEmits<{ rename: [name: string]; remove: []; dropJob: [jobId: string] }>();
 
 const { over, handlers } = useJobDropTarget((jobId) => emit("dropJob", jobId));
+
+const { isOpen, setOpen } = useFolderCollapse(() => props.folder.id);
 
 const renaming = ref(false);
 const draft = ref("");
@@ -29,7 +32,7 @@ function commitRename() {
 </script>
 
 <template>
-  <details class="folder" :class="{ over }" open v-on="handlers">
+  <details class="folder" :class="{ over }" :open="isOpen()" v-on="handlers" @toggle="setOpen(($event.target as HTMLDetailsElement).open)">
     <summary class="head">
       <AppIcon class="caret" name="chevron" :size="16" />
       <AppIcon name="folder" :size="18" />
