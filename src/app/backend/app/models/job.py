@@ -10,6 +10,7 @@ from app.db import Base, UtcDateTime
 
 if TYPE_CHECKING:
     from app.models.cue import Cue
+    from app.models.folder import Folder
     from app.models.user import User
 
 
@@ -68,10 +69,16 @@ class Job(Base):
     model: Mapped[str | None]
     confidence: Mapped[float | None]
     error: Mapped[str | None]
+    folder_id: Mapped[str | None] = mapped_column(
+        ForeignKey("folders.id", ondelete="SET NULL"), index=True
+    )
+    # soft delete: hidden from the default listing, still readable and downloadable
+    archived_at: Mapped[datetime | None] = mapped_column(UtcDateTime)
     created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=_now, index=True)
     updated_at: Mapped[datetime] = mapped_column(UtcDateTime, default=_now, onupdate=_now)
 
     owner: Mapped["User"] = relationship(back_populates="jobs")
+    folder: Mapped["Folder | None"] = relationship(back_populates="jobs")
     cues: Mapped[list["Cue"]] = relationship(
         back_populates="job",
         cascade="all, delete-orphan",

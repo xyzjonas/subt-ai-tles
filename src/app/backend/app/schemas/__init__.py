@@ -1,6 +1,7 @@
 from app.schemas.app_settings import AppSettingsIn, AppSettingsOut, ModelOption
 from app.schemas.cue import CueOut, CueUpdate, CueVariant, RetranslateRequest
-from app.schemas.job import EstimateRequest, JobEstimate, JobOut
+from app.schemas.folder import FolderIn, FolderOut
+from app.schemas.job import EstimateRequest, JobEstimate, JobOut, JobUpdate
 from app.schemas.language import LanguageOut
 from app.schemas.usage import (
     ModelRateIn,
@@ -19,8 +20,11 @@ __all__ = [
     "CueUpdate",
     "CueVariant",
     "EstimateRequest",
+    "FolderIn",
+    "FolderOut",
     "JobEstimate",
     "JobOut",
+    "JobUpdate",
     "LanguageOut",
     "ModelOption",
     "ModelRateIn",
